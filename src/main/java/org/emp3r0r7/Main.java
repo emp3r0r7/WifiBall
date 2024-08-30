@@ -9,13 +9,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@DependsOn({"configReader", "webSocketConfig"})
+@DependsOn("configReader")
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
-        logger.info("Started main class now...");
+        logger.info("Main Class started, application is running..");
     }
 }
