@@ -17,7 +17,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @AllArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebSocketConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketConfig.class);
 
     private final String endpointPath = ConfigReader.getWebSocketEndpoint();
 
@@ -25,7 +25,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @PostConstruct
     public void init() {
-        logger.info("Initializing WebSocketConfig class | Target endpoint : {}", endpointPath);
+        LOGGER.info("Initializing WebSocketConfig class | Target endpoint : {}", endpointPath);
     }
 
     @Override

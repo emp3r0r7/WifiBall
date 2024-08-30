@@ -12,10 +12,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @DependsOn("configReader")
 public class Main {
 
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        logger.info("Starting main class..");
+        LOGGER.info("Starting main class..");
         SpringApplication.run(Main.class, args);
     }
 }

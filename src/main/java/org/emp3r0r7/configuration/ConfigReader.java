@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConfigReader {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConfigReader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigReader.class);
 
     @PostConstruct
     public void init() {
-        logger.info("Initializing {}", this.getClass().getSimpleName());
+        LOGGER.info("Initializing {}", this.getClass().getSimpleName());
     }
 
     @Getter

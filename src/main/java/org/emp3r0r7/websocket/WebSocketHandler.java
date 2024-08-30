@@ -16,7 +16,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketHandler.class);
 
     private final SharedState sharedState;
 
@@ -25,7 +25,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         String payload = message.getPayload() + " | " + new Date();
 
-        logger.info("Received: {}", payload);
+        LOGGER.info("Received: {}", payload);
 
         //gestire indirizzamento in base a diverse fonti in ingresso
         sharedState.getLastGyroSensorState().set(payload);

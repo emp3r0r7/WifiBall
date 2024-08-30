@@ -16,7 +16,7 @@ import java.util.concurrent.Future;
 @Component
 public class ExecutorOrchestrator {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExecutorOrchestrator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExecutorOrchestrator.class);
 
     private final ExecutorService executorService;
     private final ConcurrentHashMap<String, IProcess> tasks;
@@ -32,24 +32,24 @@ public class ExecutorOrchestrator {
         IProcess sessionProcess = tasks.get(id);
 
         if(sessionProcess == null){
-            logger.info("Task assigned to : {} is new, proceeding...", id);
+            LOGGER.info("Task assigned to : {} is new, proceeding...", id);
             Future<?> future = executorService.submit(process);
             process.setFuture(future); //memorizzo il Future nell'istanza di IProcess
             tasks.put(id, process);
-            logger.info("Submitted new Task: {} | {}", id, process.getClass().getName());
+            LOGGER.info("Submitted new Task: {} | {}", id, process.getClass().getName());
         } else {
-            logger.warn("Task is already assigned to : {} not proceeding!", id);
+            LOGGER.warn("Task is already assigned to : {} not proceeding!", id);
         }
     }
 
     public void cancelTask(String id) {
-        logger.warn("Initiating task cancellation for : {}", id);
+        LOGGER.warn("Initiating task cancellation for : {}", id);
 
         IProcess process = tasks.get(id);
         if (process != null && process.getFuture() != null) {
             process.getFuture().cancel(true);  // Cancella il task
             tasks.remove(id);
-            logger.warn("Task : {} cancelled!", id);
+            LOGGER.warn("Task : {} cancelled!", id);
         }
 
     }
