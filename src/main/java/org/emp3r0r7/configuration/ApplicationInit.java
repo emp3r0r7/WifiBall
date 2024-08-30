@@ -6,6 +6,8 @@ import org.emp3r0r7.process.IProcess;
 import org.emp3r0r7.shared.SharedState;
 import org.emp3r0r7.thread.ExecutorOrchestrator;
 import org.emp3r0r7.utils.DateUtils;
+import org.emp3r0r7.utils.ShellUtils;
+import org.emp3r0r7.utils.WifiMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -45,6 +47,15 @@ public class ApplicationInit implements CommandLineRunner {
         }
 
         sharedState.getNetworkCardInUse().set(networkCard);
+
+        //checking if card is in monitor mode or not
+        WifiMode wifiMode = ShellUtils.checkNetworkMode(networkCard);
+
+        if(WifiMode.TYPE_MANAGED == wifiMode)
+            ShellUtils.setMonitorMode(networkCard);
+
+        if(WifiMode.TYPE_MONITOR == wifiMode)
+            LOGGER.info("Network interface : {} is in monitor mode already, continuing..", networkCard);
 
         //process submission
         IProcess airodump = new AirodumpProcess(networkCard, process -> {

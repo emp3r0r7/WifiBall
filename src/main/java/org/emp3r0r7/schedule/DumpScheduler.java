@@ -36,8 +36,10 @@ public class DumpScheduler {
         if(gyroState != null)
             LOGGER.info("Last Gyro Reading : {}", gyroState);
 
-        else
+        else {
             LOGGER.warn("Gyro Reading is null, check application!");
+            return; //gyro not present, skipping cycle
+        }
 
         //todo remove controllo xyz corretti, tutto okay si procede
         var proc = executorOrchestrator.getProcess(AIRODUMP.getProcessName());

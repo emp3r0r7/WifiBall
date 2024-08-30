@@ -4,6 +4,7 @@ package org.emp3r0r7.process;
 import lombok.Getter;
 import lombok.Setter;
 import org.emp3r0r7.configuration.ConfigReader;
+import org.emp3r0r7.thread.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +64,12 @@ public class AirodumpProcess implements IProcess {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
 
         try {
+            LOGGER.info("{} launching command : {}", this.getClass().getSimpleName(), command);
 
-            this.process = processBuilder.start().onExit().join();
+            this.process = processBuilder.start();
+            ThreadUtils.addShutdownHook(process, LOGGER);
+            this.process.onExit().join();
+
             this.pid = process.pid();
             this.exitCode = process.exitValue();
 
