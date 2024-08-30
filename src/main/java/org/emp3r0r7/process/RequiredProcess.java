@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum RequiredProcess {
 
     AIRODUMP("airodump");
-    //aggiungere altri se necessario
+    //add others if necessary...
 
     private final String processName;
 

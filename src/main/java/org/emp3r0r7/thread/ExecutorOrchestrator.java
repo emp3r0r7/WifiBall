@@ -32,11 +32,13 @@ public class ExecutorOrchestrator {
         IProcess sessionProcess = tasks.get(id);
 
         if(sessionProcess == null){
+
             LOGGER.info("Task assigned to : {} is new, proceeding...", id);
             Future<?> future = executorService.submit(process);
             process.setFuture(future); //memorizzo il Future nell'istanza di IProcess
             tasks.put(id, process);
             LOGGER.info("Submitted new Task: {} | {}", id, process.getClass().getName());
+
         } else {
             LOGGER.warn("Task is already assigned to : {} not proceeding!", id);
         }
@@ -46,12 +48,13 @@ public class ExecutorOrchestrator {
         LOGGER.warn("Initiating task cancellation for : {}", id);
 
         IProcess process = tasks.get(id);
+
         if (process != null && process.getFuture() != null) {
+
             process.getFuture().cancel(true);  // Cancella il task
             tasks.remove(id);
             LOGGER.warn("Task : {} cancelled!", id);
         }
-
     }
 
 

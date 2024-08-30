@@ -22,6 +22,8 @@ public interface IProcess extends Runnable {
 
     Integer getExitCode();
 
+    Long getEpoch();
+
     @FunctionalInterface
     interface ProcessExitCallback { void onProcessComplete(Process process);}
 
