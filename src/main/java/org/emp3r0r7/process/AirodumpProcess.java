@@ -13,7 +13,11 @@ import java.util.concurrent.Future;
 @Getter
 public class AirodumpProcess implements IProcess {
 
-    private static final Logger logger = LoggerFactory.getLogger(AirodumpProcess.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(AirodumpProcess.class);
+
+    private final static Long POLLING_RATE = ConfigReader.getPollingRate();
+
+    private final static String TEMP_PATH = ConfigReader.getTempPath() + AirodumpProcess.class.getSimpleName().toLowerCase();
 
     private final String [] command;
 
@@ -29,10 +33,6 @@ public class AirodumpProcess implements IProcess {
 
     private Integer exitCode;
 
-    private final static Long pollingRate = ConfigReader.getPollingRate();
-
-    private final static String tempPath = ConfigReader.getTempPath() + AirodumpProcess.class.getSimpleName().toLowerCase();
-
     private final String networkCard;
 
     private final ProcessExitCallback processExitCallback;
@@ -41,13 +41,13 @@ public class AirodumpProcess implements IProcess {
         this.processName = RequiredProcess.AIRODUMP.getProcessName();
         this.networkCard = networkCard;
         this.processExitCallback = callback;
-        command = new String[]{"sudo", "airodump-ng", networkCard, "-w", tempPath, "--write-interval", String.valueOf(pollingRate), "-o", "csv"};
+        command = new String[]{"sudo", "airodump-ng", networkCard, "-w", TEMP_PATH, "--write-interval", String.valueOf(POLLING_RATE), "-o", "csv"};
     }
 
     @Override
     public boolean isTaskRunning(){
         if(process != null && process.isAlive()){
-            logger.error("Process has not terminated its work yet, cannot continue..");
+            LOGGER.error("Process has not terminated its work yet, cannot continue..");
             return true;
         }
 
@@ -58,7 +58,7 @@ public class AirodumpProcess implements IProcess {
     public void run() {
 
         if(isTaskRunning()) return;
-        logger.info("{} initiated!", this.getClass().getSimpleName());
+        LOGGER.info("{} initiated!", this.getClass().getSimpleName());
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
 
@@ -71,7 +71,7 @@ public class AirodumpProcess implements IProcess {
             if(this.processExitCallback != null)
                 processExitCallback.onProcessComplete(process);
 
-            logger.info("Process started with pid {}", pid);
+            LOGGER.info("Process started with pid {}", pid);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

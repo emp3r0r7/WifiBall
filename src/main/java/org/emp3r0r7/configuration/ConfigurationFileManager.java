@@ -17,9 +17,9 @@ import static org.emp3r0r7.configuration.ConfigProperties.APPLICATION_NAME;
 @Component
 public class ConfigurationFileManager {
 
-    private static final String applicationName = ConfigReader.getApplicationName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationFileManager.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(ConfigurationFileManager.class);
+    private static final String applicationName = ConfigReader.getApplicationName();
 
     public static final String CONFIG_DIR = System.getProperty("user.home") + File.separator + "." + applicationName.toLowerCase();
 
@@ -31,27 +31,28 @@ public class ConfigurationFileManager {
             Path configDirPath = Paths.get(CONFIG_DIR);
             if (!Files.exists(configDirPath)) {
                 Files.createDirectories(configDirPath);
-                logger.info("Created configuration directory at {}", CONFIG_DIR);
+                LOGGER.info("Created configuration directory at {}", CONFIG_DIR);
             }
 
             File configFile = new File(CONFIG_FILE);
+
             if (!configFile.exists()) {
 
                 if(configFile.createNewFile())
-                    logger.info("Created configuration file at {}", CONFIG_FILE);
+                    LOGGER.info("Created configuration file at {}", CONFIG_FILE);
 
                 // default props
                 try (FileWriter writer = new FileWriter(configFile)) {
                     Properties properties = new Properties();
                     properties.setProperty(APPLICATION_NAME.getProp(), applicationName);
                     properties.store(writer, "Configuration for " + applicationName);
-                    logger.info("Configuration file populated with default settings.");
+                    LOGGER.info("Configuration file populated with default settings.");
                 }
             } else {
-                logger.info("Configuration file already exists at {}", CONFIG_FILE);
+                LOGGER.info("Configuration file already exists at {}", CONFIG_FILE);
             }
         } catch (IOException e) {
-            logger.error("Failed to create configuration file", e);
+            LOGGER.error("Failed to create configuration file", e);
         }
     }
 
@@ -61,14 +62,14 @@ public class ConfigurationFileManager {
             Path configFilePath = Paths.get(CONFIG_FILE);
             if (Files.exists(configFilePath)) {
                 properties.load(Files.newInputStream(configFilePath));
-                logger.info("Configuration loaded from {}", CONFIG_FILE);
+                LOGGER.info("Configuration loaded from {}", CONFIG_FILE);
             } else {
-                logger.warn("Configuration file does not exist, creating a new one with default settings.");
+                LOGGER.warn("Configuration file does not exist, creating a new one with default settings.");
                 createConfigurationFile();
                 properties.load(Files.newInputStream(configFilePath));
             }
         } catch (IOException e) {
-            logger.error("Failed to load configuration file", e);
+            LOGGER.error("Failed to load configuration file", e);
         }
         return properties;
     }

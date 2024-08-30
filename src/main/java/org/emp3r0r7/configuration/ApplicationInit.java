@@ -20,7 +20,7 @@ import static org.emp3r0r7.configuration.ConfigProperties.NETWORK_CARD;
 @AllArgsConstructor
 public class ApplicationInit implements CommandLineRunner {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApplicationInit.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationInit.class);
 
     private final ConfigurationFileManager configurationFileManager;
 
@@ -33,24 +33,27 @@ public class ApplicationInit implements CommandLineRunner {
 
         long startTime = System.currentTimeMillis();
 
-        logger.info("Invoked application initializer now..");
+        LOGGER.info("Invoked application initializer now..");
 
         //leggere dal file di configurazione
         Properties properties = configurationFileManager.loadConfiguration();
         String networkCard = properties.getProperty(NETWORK_CARD.getProp());
 
         if(ObjectUtils.isEmpty(networkCard)) {
-            logger.error("Configuration Parameter {} not set! Please edit your configuration file at : {}", NETWORK_CARD.getProp(), ConfigurationFileManager.CONFIG_DIR);
+            LOGGER.error("Configuration Parameter {} not set! Please edit your configuration file at : {}", NETWORK_CARD.getProp(), ConfigurationFileManager.CONFIG_DIR);
             System.exit(1);
         }
 
         sharedState.getNetworkCardInUse().set(networkCard);
 
-        //avvio processi e controllo esecuzione
+        //process submission
         IProcess airodump = new AirodumpProcess(networkCard, process -> {
-            //if the process terminates instantly, the application exits
+            //if the process terminates instantly, the application halts
             if(!DateUtils.isTimeExceeded(startTime, 1)){
-                logger.error("Airodump process is not running, check if the airodump suite is installed and check if the inteface you set is correct! | Exit code : {}", process.exitValue());
+                LOGGER.error(
+                        "Airodump process is not running, check if the airodump suite is installed and check " +
+                        "if the interface you set is correct! | Exit code : {}", process.exitValue()
+                );
                 System.exit(1);
             }
         });

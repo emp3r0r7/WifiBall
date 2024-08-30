@@ -15,7 +15,7 @@ import static org.emp3r0r7.process.RequiredProcess.AIRODUMP;
 @AllArgsConstructor
 public class DumpScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(DumpScheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DumpScheduler.class);
 
     private final SharedState sharedState;
 
@@ -27,17 +27,17 @@ public class DumpScheduler {
         String gyroState = sharedState.getLastGyroSensorState().get();
 
         if(!executorOrchestrator.isTaskRunning(AIRODUMP.getProcessName())){
-            logger.warn("Airodump process is NOT running, restoring..");
+            LOGGER.warn("Airodump process is NOT running, restoring..");
             executorOrchestrator.cancelTask(AIRODUMP.getProcessName());
             executorOrchestrator.submitTask(new AirodumpProcess(sharedState.getNetworkCardInUse().get(), null));
         }
 
         //per ogni ciclo di polling, leggere file output csv e interpreta dati
         if(gyroState != null)
-            logger.info("Last Gyro Reading : {}", gyroState);
+            LOGGER.info("Last Gyro Reading : {}", gyroState);
 
         else
-            logger.warn("Gyro Reading is null, check application!");
+            LOGGER.warn("Gyro Reading is null, check application!");
 
         //todo remove controllo xyz corretti, tutto okay si procede
         var proc = executorOrchestrator.getProcess(AIRODUMP.getProcessName());
