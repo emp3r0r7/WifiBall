@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@DependsOn("configReader")
+@DependsOn({"configReader", "webSocketConfig"})
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);

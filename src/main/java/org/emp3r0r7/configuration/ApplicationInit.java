@@ -12,14 +12,13 @@ public class ApplicationInit implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(ApplicationInit.class);
 
-
     @Override
     public void run(String... args){
 
         logger.info("Invoked application initializer now..");
 
         AirodumpProcess airodumpProcess = new AirodumpProcess();
-        airodumpProcess.run();
+        //airodumpProcess.run();
 
     }
 }
