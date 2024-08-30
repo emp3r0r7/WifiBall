@@ -15,7 +15,7 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
+        logger.info("Starting main class..");
         SpringApplication.run(Main.class, args);
-        logger.info("Main Class started, application is running..");
     }
 }

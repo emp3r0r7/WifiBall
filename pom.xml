@@ -13,7 +13,6 @@
     <artifactId>WifiMap</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>WifiMap</name>
-    <description></description>
 
     <properties>
         <java.version>21</java.version>
