@@ -2,7 +2,7 @@ package org.emp3r0r7.websocket;
 
 import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
-import org.emp3r0r7.shared.GyroSharedState;
+import org.emp3r0r7.shared.SharedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketHandler.class);
 
-    private final GyroSharedState gyroSharedState;
+    private final SharedState sharedState;
 
     @Override
     protected void handleTextMessage(@Nonnull WebSocketSession session, TextMessage message) {
@@ -27,7 +27,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         logger.info("Received: {}", payload);
 
-        gyroSharedState.getLastSensorState().set(payload);
+        //gestire indirizzamento in base a diverse fonti in ingresso
+        sharedState.getLastGyroSensorState().set(payload);
 
     }
 }

@@ -3,7 +3,7 @@ package org.emp3r0r7.websocket;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.emp3r0r7.configuration.ConfigReader;
-import org.emp3r0r7.shared.GyroSharedState;
+import org.emp3r0r7.shared.SharedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +21,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final String endpointPath = ConfigReader.getWebSocketEndpoint();
 
-    private final GyroSharedState gyroSharedState;
+    private final SharedState sharedState;
 
     @PostConstruct
     public void init() {
@@ -36,6 +36,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Bean
     public WebSocketHandler webSocketHandler() {
-        return new WebSocketHandler(gyroSharedState);
+        return new WebSocketHandler(sharedState);
     }
 }

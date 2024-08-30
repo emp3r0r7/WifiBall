@@ -1,11 +1,24 @@
 package org.emp3r0r7.configuration;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ConfigReader {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConfigReader.class);
+
+    @PostConstruct
+    public void init() {
+        logger.info("Initializing {}", this.getClass().getSimpleName());
+    }
+
+    @Getter
+    private static String applicationName;
 
     @Getter
     private static Long pollingRate;
@@ -27,5 +40,8 @@ public class ConfigReader {
 
     @Value("${websocket.endpoint.path}")
     public void setWebSocketEndpoint(String webSocketEndpoint) { ConfigReader.webSocketEndpoint = webSocketEndpoint; }
+
+    @Value("${application.name}")
+    private void setApplicationName(String applicationName) { ConfigReader.applicationName = applicationName; }
 
 }
