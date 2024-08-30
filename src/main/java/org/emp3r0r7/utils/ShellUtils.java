@@ -15,6 +15,10 @@ public class ShellUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShellUtils.class);
 
+    private static final String MON = "mon";
+
+    public static final String SEPARATOR = "$";
+
     /**
      * Controlla se la scheda di rete specificata è in modalità monitor.
      *
@@ -23,36 +27,41 @@ public class ShellUtils {
      */
     public static WifiMode checkNetworkMode(String networkInterface) {
 
-        String [] command = new String[]{"iw", "dev", networkInterface, "info"};
+        String [] networkCardModes = new String[]{networkInterface, networkInterface + MON};
 
-        try {
+        for(String card : networkCardModes){
 
-            ProcessBuilder processBuilder = new ProcessBuilder(command);
-            Process process = processBuilder.start().onExit().join();
+            String [] command = new String[]{"iw", "dev", card, "info"};
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
+            try {
 
-            while ((line = reader.readLine()) != null) {
+                ProcessBuilder processBuilder = new ProcessBuilder(command);
+                Process process = processBuilder.start().onExit().join();
 
-                if (line.trim().contains(TYPE_MONITOR.getType()))
-                    return TYPE_MONITOR;
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
 
-                if (line.trim().contains(TYPE_MANAGED.getType()))
-                    return TYPE_MANAGED;
+                while ((line = reader.readLine()) != null) {
+
+                    if (line.trim().contains(TYPE_MONITOR.getType()))
+                        return TYPE_MONITOR;
+
+                    if (line.trim().contains(TYPE_MANAGED.getType()))
+                        return TYPE_MANAGED;
+                }
+
+            } catch (Exception e) {
+                LOGGER.error("An error occurred during the execution of the command: {}", Arrays.toString(command));
             }
 
-            LOGGER.error("Cannot determine network card mode status, exiting..");
-            System.exit(1);
-
-        } catch (Exception e) {
-            LOGGER.error("An error occurred during the execution of the command: {}", Arrays.toString(command));
         }
 
+        LOGGER.error("Cannot determine network card mode status, exiting..");
+        System.exit(1);
         return null;
     }
 
-    public static void setMonitorMode(String networkInterface){
+    public static String setMonitorMode(String networkInterface){
 
         String [] command = new String[]{"sudo", "airmon-ng", "start", networkInterface};
 
@@ -66,13 +75,25 @@ public class ShellUtils {
                 LOGGER.error("Cannot set network interface : {} to monitor mode, exiting..", networkInterface);
                 System.exit(1);
 
-            } else
+            } else{
                 LOGGER.info("Network interface : {} successfully set to monitor mode!", networkInterface);
+                return networkInterface + MON;
+            }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+        return networkInterface;
+    }
+
+
+    public static String renameNetworkInterface(String networkInterface){
+
+        if(!networkInterface.endsWith(MON))
+            return networkInterface + MON;
+
+        return networkInterface;
     }
 }
 

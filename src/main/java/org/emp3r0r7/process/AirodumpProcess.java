@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import static org.emp3r0r7.filesystem.FileSystemEngine.TEMP_PATH;
+import static org.emp3r0r7.utils.ShellUtils.SEPARATOR;
+
 @Getter
 public class AirodumpProcess implements IProcess {
 
@@ -18,9 +21,12 @@ public class AirodumpProcess implements IProcess {
 
     private final static Long POLLING_RATE = ConfigReader.getPollingRate();
 
-    private final static String TEMP_PATH = ConfigReader.getTempPath() + AirodumpProcess.class.getSimpleName().toLowerCase();
+    private final static String FILEPREFIX_TEMP_PATH = TEMP_PATH+ AirodumpProcess.class.getSimpleName().toLowerCase();
 
     private final String [] command;
+
+    @Getter
+    private final Long epoch;
 
     @Setter
     private String processName;
@@ -42,7 +48,22 @@ public class AirodumpProcess implements IProcess {
         this.processName = RequiredProcess.AIRODUMP.getProcessName();
         this.networkCard = networkCard;
         this.processExitCallback = callback;
-        command = new String[]{"sudo", "airodump-ng", networkCard, "-w", TEMP_PATH, "--write-interval", String.valueOf(POLLING_RATE), "-o", "csv"};
+        this.epoch = System.currentTimeMillis();
+
+        this.command = new String[]{
+
+                "sudo",
+                "airodump-ng",
+                networkCard,
+                "-w",
+                FILEPREFIX_TEMP_PATH + SEPARATOR + epoch + SEPARATOR,
+                "--write-interval",
+                POLLING_RATE.toString(),
+                "-o",
+                "csv"
+
+        };
+
     }
 
     @Override
