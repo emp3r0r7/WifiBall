@@ -7,12 +7,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConfigReader {
 
-
     @Getter
     private static Long pollingRate;
 
     @Getter
     private static String tempPath;
+
+    @Getter
+    private static String webSocketEndpoint;
+
+    @Value("${websocket.endpoint.path}")
+    public void setWebSocketEndpoint(String webSocketEndpoint) {
+        ConfigReader.webSocketEndpoint = webSocketEndpoint;
+    }
 
     @Value("${application.dump.path}")
     private void setTempPath(String tempPath){
