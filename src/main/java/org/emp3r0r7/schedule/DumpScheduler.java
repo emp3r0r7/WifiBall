@@ -12,15 +12,14 @@ import org.emp3r0r7.process.IProcess;
 import org.emp3r0r7.shared.SharedState;
 import org.emp3r0r7.thread.ExecutorOrchestrator;
 import org.emp3r0r7.utils.StringUtil;
+import org.emp3r0r7.websocket.FrontendWebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.emp3r0r7.filesystem.FileSystemEngine.TEMP_PATH;
 import static org.emp3r0r7.process.RequiredProcess.AIRODUMP;
@@ -34,15 +33,18 @@ public class DumpScheduler {
 
     private final ExecutorOrchestrator orchestrator;
 
+    private final FrontendWebSocketHandler webSocketHandler;
+
     private Long previousEpoch = null;
 
     private File file = null;
 
-    private final Map<String, DataReading> readingMap = new HashMap<>();
-
-    public DumpScheduler(SharedState sharedState, ExecutorOrchestrator orchestrator){
+    public DumpScheduler(SharedState sharedState,
+                         ExecutorOrchestrator orchestrator,
+                         FrontendWebSocketHandler webSocketHandler){
         this.sharedState = sharedState;
         this.orchestrator = orchestrator;
+        this.webSocketHandler = webSocketHandler;
     }
 
     @Scheduled(fixedDelayString = "${scheduler.dump_scheduler.polling_rate}", initialDelay = 5000)
@@ -59,14 +61,14 @@ public class DumpScheduler {
 
         //per ogni ciclo di polling, leggere file output csv e interpreta dati
         if(gyroState != null){
-            LOGGER.info("Last Gyro Reading : {}", gyroState);
+            //LOGGER.info("Last Gyro Reading : {}", gyroState);
             gyroData = StringUtil.extractGyroData(gyroState);
+            sharedState.getFrontEndData().setGyroData(gyroData);
         }
 
         else {
             LOGGER.warn("Gyro Reading is null, check Android application!");
-            gyroData = null;
-            //return; //gyro not present, skipping cycle
+            return; //gyro not present, skipping cycle
         }
 
 
@@ -95,7 +97,7 @@ public class DumpScheduler {
 
                     }).toList();
 
-            readingMap.compute(bssid , (accessPoint, dataReading) -> {
+            sharedState.getFrontEndData().getWifiDataMap().compute(bssid , (accessPoint, dataReading) -> {
 
                 int apPower = ap.getPower();
 
@@ -116,7 +118,11 @@ public class DumpScheduler {
                 }
                 return dataReading;
             });
+
+            //invio della mappa
+            webSocketHandler.sendDataToClient();
         }
+        System.out.println(sharedState.getFrontEndData().getGyroData());
     }
 
 

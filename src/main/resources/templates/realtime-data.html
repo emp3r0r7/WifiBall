@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time 3D WiFi Data with Babylon.js</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
+        #data-container {
+            white-space: pre-wrap;
+            font-family: monospace;
+            display: none; /* Nasconde il JSON grezzo */
+        }
+        #tooltip {
+            position: absolute;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border-radius: 5px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<h1>Real-Time WiFi Data in 3D</h1>
+<div id="data-container"></div>
+<div id="tooltip"></div>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
+
+<script>
+    let canvas, engine, scene, camera, ground;
+    let referenceSphere, arrowMesh;
+    const spheres = {}; // Mappa per tenere traccia delle sfere esistenti
+
+    function createTooltip() {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.position = 'absolute';
+        tooltip.style.padding = '5px';
+        tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        tooltip.style.color = '#fff';
+        tooltip.style.borderRadius = '5px';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.display = 'none';
+        document.body.appendChild(tooltip);
+        return tooltip;
+    }
+
+    function init() {
+        // Get the canvas element
+        canvas = document.createElement("canvas");
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
+        document.body.appendChild(canvas);
+
+        // Generate the Babylon.js engine and scene
+        engine = new BABYLON.Engine(canvas, true);
+        scene = new BABYLON.Scene(engine);
+
+        // Create an ArcRotateCamera, and set its position to the center of the scene
+        camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 100, BABYLON.Vector3.Zero(), scene);
+        camera.attachControl(canvas, true);
+        camera.wheelDeltaPercentage = 0.01; // Imposta la sensibilità dello zoom
+
+        // Enable panning and zooming
+        camera.panningSensibility = 1000;
+        camera.lowerRadiusLimit = 2; // Limite minimo di zoom
+
+        // Add lights to the scene
+        const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+        light1.intensity = 0.7;
+
+        const light2 = new BABYLON.DirectionalLight("light2", new BABYLON.Vector3(0, -1, 1), scene);
+        light2.intensity = 0.5;
+
+        // Set background color to sky blue
+        scene.clearColor = new BABYLON.Color3(0.5, 0.8, 1);
+
+        // Create ground plane with a grid material
+        ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 1000, height: 1000}, scene);
+
+        // Crea un materiale personalizzato per il piano con una griglia
+        const gridMaterial = new BABYLON.GridMaterial("gridMaterial", scene);
+        gridMaterial.gridRatio = 10; // Dimensione delle celle della griglia
+        gridMaterial.majorUnitFrequency = 1; // Frequenza delle linee principali
+        gridMaterial.minorUnitVisibility = 0.45; // Visibilità delle linee minori
+        gridMaterial.gridOffset = new BABYLON.Vector3(0, 0, 0); // Spostamento della griglia
+        gridMaterial.backFaceCulling = false; // Rende la griglia visibile su entrambi i lati
+        gridMaterial.mainColor = new BABYLON.Color3(0.3, 0.3, 0.3); // Colore principale della griglia
+        gridMaterial.lineColor = new BABYLON.Color3(1, 1, 1); // Colore delle linee della griglia
+        gridMaterial.opacity = 0.5; // Imposta la trasparenza
+
+        ground.material = gridMaterial;
+
+        // Add a yellow reference sphere at the center
+        referenceSphere = BABYLON.MeshBuilder.CreateSphere("referenceSphere", {diameter: 3}, scene);
+        const referenceMaterial = new BABYLON.StandardMaterial("referenceMaterial", scene);
+        referenceMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0); // Giallo
+        referenceSphere.material = referenceMaterial;
+        referenceSphere.position = new BABYLON.Vector3(0, 0, 0);
+
+        // Create an arrow to represent the orientation (Yaw and Pitch) of the reference sphere
+        const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {diameterTop: 0, diameterBottom: 0.5, height: 5}, scene);
+        arrow.parent = referenceSphere;
+        arrow.position = new BABYLON.Vector3(0, 2.5, 0);
+        arrow.rotation.x = 0; // Inizialmente parallela al piano
+        arrowMesh = arrow;
+
+        // Start the render loop
+        engine.runRenderLoop(() => {
+            scene.render();
+        });
+
+        // Handle window resizing
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+
+        // Create the tooltip
+        createTooltip();
+    }
+
+    function calculateDistanceFromPower(power) {
+        // Mappa la potenza (dBm) su una distanza. Più negativa è la potenza, maggiore è la distanza.
+        const minDistance = 5;
+        const maxDistance = 100;
+        return BABYLON.Scalar.Lerp(maxDistance, minDistance, (power + 100) / 80); // Normalizza il valore tra 0 e 1
+    }
+
+    function calculatePositionFromGyroAndPower(gyroData, distance) {
+        // Calcola la posizione basata sull'orientamento della freccia e sulla distanza
+        const pitchRadians = BABYLON.Tools.ToRadians(gyroData.axisX); // Pitch
+        const yawRadians = BABYLON.Tools.ToRadians(gyroData.axisZ); // Yaw
+
+        // Inverti i calcoli per ottenere la posizione corretta
+        const x = -distance * Math.cos(pitchRadians) * Math.sin(yawRadians);
+        const y = -distance * Math.sin(pitchRadians); // Altezza basata sul pitch
+        const z = -distance * Math.cos(pitchRadians) * Math.cos(yawRadians);
+
+        return new BABYLON.Vector3(x, y, z);
+    }
+
+    function updateReferenceSphereOrientation(gyroData) {
+        // Normalizza l'angolo di yaw da -180 a 180 a un angolo tra 0 e 360 gradi
+        let yaw = gyroData.axisZ;
+        if (yaw < 0) {
+            yaw = 360 + yaw;
+        }
+
+        // Converti in radianti e applica la rotazione
+        const yawRadians = BABYLON.Tools.ToRadians(yaw);
+        const pitchRadians = BABYLON.Tools.ToRadians(gyroData.axisX);
+
+        // Applica le rotazioni
+        arrowMesh.rotation.y = yawRadians; // Rotazione per Yaw (Z axis)
+
+        // Inverti la rotazione per il pitch per correggere il comportamento
+        arrowMesh.rotation.x = -pitchRadians - Math.PI / 2; // Inversione del pitch
+    }
+
+    function updateScene(frontEndData) {
+        const readingMap = frontEndData.wifiDataMap;
+
+        for (const [bssid, dataReading] of Object.entries(readingMap)) {
+            const power = dataReading.highestPower;
+            const distance = calculateDistanceFromPower(power);
+            const position = calculatePositionFromGyroAndPower(dataReading.gyroData, distance);
+
+            let sphere = spheres[bssid];
+
+            if (!sphere) {
+                // Create a new sphere if it doesn't exist
+                sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2}, scene);
+                const material = new BABYLON.StandardMaterial("material", scene);
+                material.diffuseColor = new BABYLON.Color3(0, 0.47, 1);
+                sphere.material = material;
+                spheres[bssid] = sphere;
+
+                // Aggiungi ActionManager per gestire mouseover e mouseout
+                sphere.actionManager = new BABYLON.ActionManager(scene);
+                sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPointerOverTrigger,
+                    function (evt) {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.innerHTML = `
+                            <strong>ESSID:</strong> ${dataReading.accessPoint.essid}<br>
+                            <strong>BSSID:</strong> ${dataReading.accessPoint.bssid}<br>
+                            <strong>Last Seen:</strong> ${dataReading.accessPoint.lastTimeSeen}<br>
+                            <strong>Channel:</strong> ${dataReading.accessPoint.channel}<br>
+                            <strong>Privacy:</strong> ${dataReading.accessPoint.privacy}<br>
+                            <strong>Cipher:</strong> ${dataReading.accessPoint.cipher}<br>
+                            <strong>Authentication:</strong> ${dataReading.accessPoint.authentication}<br>
+                            <strong>Power:</strong> ${dataReading.accessPoint.power}<br>
+                        `;
+                        tooltip.style.display = 'block';
+                    }
+                ));
+
+                sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPointerOutTrigger,
+                    function (evt) {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    }
+                ));
+                console.log(`Sfera creata - ESSID: ${dataReading.accessPoint.essid}, BSSID: ${dataReading.accessPoint.bssid}, Posizione: (${position.x}, ${position.y}, ${position.z})`);
+            }
+
+            // Update position based on gyro data and signal strength
+            sphere.position = position.add(referenceSphere.position);
+        }
+
+        // Update the reference sphere orientation based on the latest gyroData
+        updateReferenceSphereOrientation(frontEndData.gyroData);
+    }
+
+    function connectWebSocket() {
+        const socket = new WebSocket('ws://192.168.1.124:8011/data');
+
+        socket.onmessage = function(event) {
+            const dataContainer = document.getElementById('data-container');
+            const frontEndData = JSON.parse(event.data);
+
+            dataContainer.innerHTML = JSON.stringify(frontEndData, null, 2);
+            updateScene(frontEndData);
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket closed, reconnecting...');
+            setTimeout(connectWebSocket, 5000);
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket Error: ', error);
+        };
+    }
+
+    window.onload = function () {
+        init();
+        connectWebSocket();
+    };
+
+    // Aggiungi un event listener globale per muovere il tooltip insieme al mouse
+    document.addEventListener('mousemove', function (event) {
+        const tooltip = document.getElementById('tooltip');
+        if (tooltip.style.display === 'block') {
+            tooltip.style.left = (event.clientX + 10) + 'px';
+            tooltip.style.top = (event.clientY + 10) + 'px';
+        }
+    });
+</script>
+</body>
+</html>

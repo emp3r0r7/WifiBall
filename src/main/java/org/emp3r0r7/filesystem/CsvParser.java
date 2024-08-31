@@ -67,7 +67,10 @@ public class CsvParser {
                     router.setEssid(safeTrim(line[13]));
                     router.setKey(safeTrim(line[14]));
 
+                    if(router.getPower() >= -2) continue; //skip bad readings
+
                     routers.add(router);
+
                 } else {
                     System.out.println("Riga non valida (lunghezza " + line.length + "): " + Arrays.toString(line));
                 }

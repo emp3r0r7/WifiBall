@@ -12,9 +12,9 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
 @AllArgsConstructor
-public class WebSocketHandler extends TextWebSocketHandler {
+public class GyroWebSocketHandler extends TextWebSocketHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GyroWebSocketHandler.class);
 
     private final SharedState sharedState;
 
