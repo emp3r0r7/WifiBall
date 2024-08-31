@@ -99,7 +99,7 @@
         // Add a yellow reference sphere at the center
         referenceSphere = BABYLON.MeshBuilder.CreateSphere("referenceSphere", {diameter: 3}, scene);
         const referenceMaterial = new BABYLON.StandardMaterial("referenceMaterial", scene);
-        referenceMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0); // Giallo
+        referenceMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0); // Giallo
         referenceSphere.material = referenceMaterial;
         referenceSphere.position = new BABYLON.Vector3(0, 0, 0);
 
@@ -131,18 +131,18 @@
         return BABYLON.Scalar.Lerp(maxDistance, minDistance, (power + 100) / 80); // Normalizza il valore tra 0 e 1
     }
 
-    function calculatePositionFromGyroAndPower(gyroData, distance) {
-        // Calcola la posizione basata sull'orientamento della freccia e sulla distanza
-        const pitchRadians = BABYLON.Tools.ToRadians(gyroData.axisX); // Pitch
-        const yawRadians = BABYLON.Tools.ToRadians(gyroData.axisZ); // Yaw
+    function calculatePositionFromGyroAndPower(gyroData, distance, arrowMesh) {
+        const pitchRadians = arrowMesh.rotation.x + Math.PI / 2; // Pitch
+        const yawRadians = arrowMesh.rotation.y; // Yaw
 
-        // Inverti i calcoli per ottenere la posizione corretta
+        // Invertiamo la direzione per proiettare dalla parte frontale della freccia
         const x = -distance * Math.cos(pitchRadians) * Math.sin(yawRadians);
-        const y = -distance * Math.sin(pitchRadians); // Altezza basata sul pitch
+        const y = distance * Math.sin(pitchRadians); // Muovere verso l'alto quando la freccia punta in alto
         const z = -distance * Math.cos(pitchRadians) * Math.cos(yawRadians);
 
         return new BABYLON.Vector3(x, y, z);
     }
+
 
     function updateReferenceSphereOrientation(gyroData) {
         // Normalizza l'angolo di yaw da -180 a 180 a un angolo tra 0 e 360 gradi
@@ -168,55 +168,78 @@
         for (const [bssid, dataReading] of Object.entries(readingMap)) {
             const power = dataReading.highestPower;
             const distance = calculateDistanceFromPower(power);
-            const position = calculatePositionFromGyroAndPower(dataReading.gyroData, distance);
 
-            let sphere = spheres[bssid];
+            // Passa l'orientamento corrente della freccia (arrowMesh) alla funzione di calcolo della posizione
+            const position = calculatePositionFromGyroAndPower(dataReading.gyroData, distance, arrowMesh);
 
-            if (!sphere) {
-                // Create a new sphere if it doesn't exist
-                sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2}, scene);
-                const material = new BABYLON.StandardMaterial("material", scene);
-                material.diffuseColor = new BABYLON.Color3(0, 0.47, 1);
-                sphere.material = material;
-                spheres[bssid] = sphere;
-
-                // Aggiungi ActionManager per gestire mouseover e mouseout
-                sphere.actionManager = new BABYLON.ActionManager(scene);
-                sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
-                    BABYLON.ActionManager.OnPointerOverTrigger,
-                    function (evt) {
-                        const tooltip = document.getElementById('tooltip');
-                        tooltip.innerHTML = `
-                            <strong>ESSID:</strong> ${dataReading.accessPoint.essid}<br>
-                            <strong>BSSID:</strong> ${dataReading.accessPoint.bssid}<br>
-                            <strong>Last Seen:</strong> ${dataReading.accessPoint.lastTimeSeen}<br>
-                            <strong>Channel:</strong> ${dataReading.accessPoint.channel}<br>
-                            <strong>Privacy:</strong> ${dataReading.accessPoint.privacy}<br>
-                            <strong>Cipher:</strong> ${dataReading.accessPoint.cipher}<br>
-                            <strong>Authentication:</strong> ${dataReading.accessPoint.authentication}<br>
-                            <strong>Power:</strong> ${dataReading.accessPoint.power}<br>
-                        `;
-                        tooltip.style.display = 'block';
-                    }
-                ));
-
-                sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
-                    BABYLON.ActionManager.OnPointerOutTrigger,
-                    function (evt) {
-                        const tooltip = document.getElementById('tooltip');
-                        tooltip.style.display = 'none';
-                    }
-                ));
-                console.log(`Sfera creata - ESSID: ${dataReading.accessPoint.essid}, BSSID: ${dataReading.accessPoint.bssid}, Posizione: (${position.x}, ${position.y}, ${position.z})`);
+            // Verifica se la sfera esiste già e confronta la potenza
+            if (spheres[bssid]) {
+                if (power > spheres[bssid].currentPower) {
+                    // Rimuovi la sfera esistente solo se la nuova potenza è maggiore
+                    spheres[bssid].dispose();
+                    delete spheres[bssid];
+                } else {
+                    // Se la potenza non è maggiore, salta al prossimo access point
+                    continue;
+                }
             }
 
-            // Update position based on gyro data and signal strength
+            // Crea una nuova sfera
+            const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2}, scene);
+            const material = new BABYLON.StandardMaterial("material", scene);
+
+            // Imposta il colore della sfera in base alla potenza del segnale
+            if (power >= -45) {
+                material.diffuseColor = new BABYLON.Color3(0, 0, 1); // Blu
+            } else if (power >= -70) {
+                material.diffuseColor = new BABYLON.Color3(1, 1, 0); // Giallo
+            } else {
+                material.diffuseColor = new BABYLON.Color3(1, 0, 0); // Rosso
+            }
+
+            sphere.material = material;
+            spheres[bssid] = sphere;
+            spheres[bssid].currentPower = power;  // Memorizza la potenza corrente
+
+            // Posiziona la nuova sfera basata sulla posizione della freccia
             sphere.position = position.add(referenceSphere.position);
+
+            // Aggiungi ActionManager per gestire mouseover e mouseout
+            sphere.actionManager = new BABYLON.ActionManager(scene);
+            sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOverTrigger,
+                function (evt) {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.innerHTML = `
+                    <strong>ESSID:</strong> ${dataReading.accessPoint.essid}<br>
+                    <strong>BSSID:</strong> ${dataReading.accessPoint.bssid}<br>
+                    <strong>Last Seen:</strong> ${dataReading.accessPoint.lastTimeSeen}<br>
+                    <strong>Channel:</strong> ${dataReading.accessPoint.channel}<br>
+                    <strong>Privacy:</strong> ${dataReading.accessPoint.privacy}<br>
+                    <strong>Cipher:</strong> ${dataReading.accessPoint.cipher}<br>
+                    <strong>Authentication:</strong> ${dataReading.accessPoint.authentication}<br>
+                    <strong>Power:</strong> ${dataReading.accessPoint.power}<br>
+                `;
+                    tooltip.style.display = 'block';
+                }
+            ));
+
+            sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOutTrigger,
+                function (evt) {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.display = 'none';
+                }
+            ));
+
+            console.log(`Sfera disegnata - ESSID: ${dataReading.accessPoint.essid}, BSSID: ${dataReading.accessPoint.bssid}, Posizione: (${sphere.position.x}, ${sphere.position.y}, ${sphere.position.z})`);
         }
 
-        // Update the reference sphere orientation based on the latest gyroData
+        // Aggiorna l'orientamento della sfera di riferimento in base ai dati più recenti del giroscopio
         updateReferenceSphereOrientation(frontEndData.gyroData);
     }
+
+
 
     function connectWebSocket() {
         const socket = new WebSocket('ws://192.168.1.124:8011/data');
