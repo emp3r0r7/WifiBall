@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.emp3r0r7.configuration.ConfigReader;
 import org.emp3r0r7.shared.SharedState;
+import org.emp3r0r7.utils.NetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final String endpointPath = ConfigReader.getWebSocketEndpoint();
 
+    private final Integer endpointPort = ConfigReader.getWebSocketPort();
+
     private final SharedState sharedState;
 
     @PostConstruct
@@ -32,6 +35,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(webSocketHandler(), endpointPath)
                 .setAllowedOrigins("*");
+
+        LOGGER.info("Websocket registered at : {}:{}", NetUtils.obtainLocalIpAddress(), endpointPort);
+
     }
 
     @Bean

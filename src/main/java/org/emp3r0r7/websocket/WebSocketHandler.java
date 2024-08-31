@@ -10,8 +10,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.Date;
-
 @Component
 @AllArgsConstructor
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -23,9 +21,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(@Nonnull WebSocketSession session, TextMessage message) {
 
-        String payload = message.getPayload() + " | " + new Date();
+        String payload = message.getPayload();
 
-        LOGGER.info("Received: {}", payload);
+        //LOGGER.info("Received: {}", payload);
 
         //gestire indirizzamento in base a diverse fonti in ingresso
         sharedState.getLastGyroSensorState().set(payload);
