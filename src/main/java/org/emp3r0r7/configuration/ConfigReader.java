@@ -27,7 +27,10 @@ public class ConfigReader {
     private static String tempPath;
 
     @Getter
-    private static String webSocketEndpoint;
+    private static String gyroWebSocketEndpoint;
+
+    @Getter
+    private static String frontendWebSocketEndpoint;
 
     @Getter
     private static Integer webSocketPort;
@@ -41,13 +44,16 @@ public class ConfigReader {
         ConfigReader.pollingRate = pollingRate;
     }
 
-    @Value("${websocket.endpoint.path}")
-    public void setWebSocketEndpoint(String webSocketEndpoint) { ConfigReader.webSocketEndpoint = webSocketEndpoint; }
+    @Value("${gyro.websocket.endpoint.path}")
+    public void setGyroWebSocketEndpoint(String gyroWebSocketEndpoint) { ConfigReader.gyroWebSocketEndpoint = gyroWebSocketEndpoint; }
 
     @Value("${server.port}")
     public void setWebSocketPort(Integer webSocketPort) { ConfigReader.webSocketPort = webSocketPort; }
 
     @Value("${application.name}")
     private void setApplicationName(String applicationName) { ConfigReader.applicationName = applicationName; }
+
+    @Value("${frontend.websocket.endpoint.path}")
+    private void setFrontendWebSocketEndpoint(String frontendWebSocketEndpoint) { ConfigReader.frontendWebSocketEndpoint = frontendWebSocketEndpoint; }
 
 }

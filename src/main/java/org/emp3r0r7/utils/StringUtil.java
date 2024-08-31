@@ -2,8 +2,13 @@ package org.emp3r0r7.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.emp3r0r7.model.GyroData;
+import org.emp3r0r7.schedule.DumpScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StringUtil {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StringUtil.class);
 
     public static String safeTrim(String value) {
         return StringUtils.isNotBlank(value) ? value.trim() : "";
@@ -16,7 +21,7 @@ public class StringUtil {
     private static String cleanGyroData(String axis){
         return axis
                 .replaceAll(",", ".")
-                .replaceAll("[^0-9.]", "");
+                .replaceAll("[^0-9.-]", "");
     }
 
     public static GyroData extractGyroData(String gyroState){
@@ -24,19 +29,23 @@ public class StringUtil {
         //Y=3.0328019|X=-2.373595|Z=151.55737
         String[] split = gyroState.split("\\|");
 
-        if(split.length == 3){
+        try {
+            if(split.length == 3){
 
-            GyroData gyroData = new GyroData();
-            String y = split[0];
-            String x = split[1];
-            String z = split[2];
+                GyroData gyroData = new GyroData();
+                String y = split[0];
+                String x = split[1];
+                String z = split[2];
 
-            gyroData.setAxisY(Double.valueOf(cleanGyroData(y)));
-            gyroData.setAxisX(Double.valueOf(cleanGyroData(x)));
-            gyroData.setAxisZ(Double.valueOf(cleanGyroData(z)));
+                gyroData.setAxisY(Double.valueOf(cleanGyroData(y)));
+                gyroData.setAxisX(Double.valueOf(cleanGyroData(x)));
+                gyroData.setAxisZ(Double.valueOf(cleanGyroData(z)));
 
-            gyroData.setReadEpoch(System.currentTimeMillis());
-            return gyroData;
+                gyroData.setReadEpoch(System.currentTimeMillis());
+                return gyroData;
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.error("Error parsing gyro state", e);
         }
 
         return null;

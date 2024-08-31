@@ -20,7 +20,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketConfig.class);
 
-    private final String endpointPath = ConfigReader.getWebSocketEndpoint();
+    private final String gyroWebSocketEndpoint = ConfigReader.getGyroWebSocketEndpoint();
+
+    private final String frontendWebSocketEndpoint = ConfigReader.getFrontendWebSocketEndpoint();
 
     private final Integer endpointPort = ConfigReader.getWebSocketPort();
 
@@ -28,20 +30,29 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @PostConstruct
     public void init() {
-        LOGGER.info("Initializing WebSocketConfig class | Target endpoint : {}", endpointPath);
+        LOGGER.info("Initializing WebSocketConfig class | Target endpoint : {}", gyroWebSocketEndpoint);
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(webSocketHandler(), endpointPath)
+        registry.addHandler(gyroWebSocketHandler(), gyroWebSocketEndpoint)
                 .setAllowedOrigins("*");
 
-        LOGGER.info("Websocket registered at : {}:{}", NetUtils.obtainLocalIpAddress(), endpointPort);
+        LOGGER.info("Websocket {} registered at : {}:{}{}", GyroWebSocketHandler.class.getSimpleName(), NetUtils.obtainLocalIpAddress(), endpointPort, gyroWebSocketEndpoint);
+
+        registry.addHandler(frontendWebSocketHandler(), frontendWebSocketEndpoint)
+                .setAllowedOrigins("*");
+
+        LOGGER.info("Websocket {} registered at : {}:{}{}", FrontendWebSocketHandler.class.getSimpleName(), NetUtils.obtainLocalIpAddress(), endpointPort, frontendWebSocketEndpoint);
 
     }
 
     @Bean
-    public WebSocketHandler webSocketHandler() {
-        return new WebSocketHandler(sharedState);
+    public GyroWebSocketHandler gyroWebSocketHandler() {
+        return new GyroWebSocketHandler(sharedState);
     }
+
+    @Bean
+    public FrontendWebSocketHandler frontendWebSocketHandler() {return new FrontendWebSocketHandler(sharedState);}
+
 }
