@@ -29,6 +29,9 @@ public class ConfigReader {
     @Getter
     private static String webSocketEndpoint;
 
+    @Getter
+    private static Integer webSocketPort;
+
 
     @Value("${application.dump.path}")
     private void setTempPath(String tempPath) { ConfigReader.tempPath = tempPath; }
@@ -40,6 +43,9 @@ public class ConfigReader {
 
     @Value("${websocket.endpoint.path}")
     public void setWebSocketEndpoint(String webSocketEndpoint) { ConfigReader.webSocketEndpoint = webSocketEndpoint; }
+
+    @Value("${server.port}")
+    public void setWebSocketPort(Integer webSocketPort) { ConfigReader.webSocketPort = webSocketPort; }
 
     @Value("${application.name}")
     private void setApplicationName(String applicationName) { ConfigReader.applicationName = applicationName; }
