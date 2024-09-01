@@ -10,9 +10,9 @@
         <!--  lookup parent from repository  -->
     </parent>
     <groupId>org.emp3r0r7</groupId>
-    <artifactId>WifiMap</artifactId>
+    <artifactId>WifiBall</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>WifiMap</name>
+    <name>WifiBall</name>
 
     <properties>
         <java.version>21</java.version>
