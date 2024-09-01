@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.emp3r0r7.configuration.ConfigProperties.APPLICATION_NAME;
+import static org.emp3r0r7.configuration.ConfigProperties.NETWORK_CARD;
 
 @Component
 public class ConfigurationFileManager {
@@ -45,6 +46,7 @@ public class ConfigurationFileManager {
                 try (FileWriter writer = new FileWriter(configFile)) {
                     Properties properties = new Properties();
                     properties.setProperty(APPLICATION_NAME.getProp(), applicationName);
+                    properties.setProperty(NETWORK_CARD.getProp(), "");
                     properties.store(writer, "Configuration for " + applicationName);
                     LOGGER.info("Configuration file populated with default settings.");
                 }

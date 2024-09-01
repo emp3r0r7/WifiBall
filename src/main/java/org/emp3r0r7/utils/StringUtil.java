@@ -2,7 +2,6 @@ package org.emp3r0r7.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.emp3r0r7.model.GyroData;
-import org.emp3r0r7.schedule.DumpScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
