@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Real-Time 3D WiFi Data with Babylon.js</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
@@ -20,20 +21,127 @@
             display: none;
             z-index: 1000;
         }
+        #header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ccc;
+        }
+        #header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        #header .btn {
+            margin-left: auto;
+        }
+
     </style>
 </head>
+
 <body>
-<h1>Real-Time WiFi Data in 3D</h1>
+<div id="header" class="d-flex align-items-center">
+    <h1>Real-Time WiFi Data in 3D</h1>
+    <button id="toggle-sidebar" class="btn btn-primary ms-3">Show AP List</button>
+</div>
 <div id="data-container"></div>
 <div id="tooltip"></div>
+
+<div id="sidebar" style="display:none; position: absolute; right: 0; top: 0; width: 250px; height: 100%; background-color: #f8f8f8; border-left: 1px solid #ccc; overflow-y: auto;">
+    <h3 class="p-3">Access Points</h3>
+    <ul id="ap-list" style="list-style-type: none; padding: 0;">
+    </ul>
+</div>
+
+<!-- Modale per mostrare i dettagli dell'AP -->
+<div class="modal fade" id="apModal" tabindex="-1" aria-labelledby="apModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl"> <!-- Aggiunta la classe modal-xl -->
+        <div class="modal-content" style="height: 80vh;"> <!-- Altezza della modale -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="apModalLabel">AP Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="apDetailsForm" class="row">
+                    <!-- Dettagli AP -->
+                    <div class="col-md-6 mb-3">
+                        <label for="apEssid" class="form-label">ESSID</label>
+                        <input type="text" class="form-control" id="apEssid" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apBssid" class="form-label">BSSID</label>
+                        <input type="text" class="form-control" id="apBssid" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apLastSeen" class="form-label">Last Seen</label>
+                        <input type="text" class="form-control" id="apLastSeen" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apChannel" class="form-label">Channel</label>
+                        <input type="text" class="form-control" id="apChannel" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apPrivacy" class="form-label">Privacy</label>
+                        <input type="text" class="form-control" id="apPrivacy" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apCipher" class="form-label">Cipher</label>
+                        <input type="text" class="form-control" id="apCipher" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apAuthentication" class="form-label">Authentication</label>
+                        <input type="text" class="form-control" id="apAuthentication" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apPower" class="form-label">Power</label>
+                        <input type="text" class="form-control" id="apPower" readonly>
+                    </div>
+                    <h5>Associated Stations</h5>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Station MAC</th>
+                                <th>First Time Seen</th>
+                                <th>Last Time Seen</th>
+                                <th>Power</th>
+                                <th>Packets</th>
+                                <th>BSSID</th>
+                                <th>Probed ESSIDs</th>
+                            </tr>
+                            </thead>
+                            <tbody id="stationTableBody">
+                            <!-- Righe delle stazioni associate verranno aggiunte qui dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 
 <script>
+
     let canvas, engine, scene, camera, ground;
     let referenceSphere, arrowMesh;
+    let selectedSphere = null;
+    let marker = null;
+
+    const highPow = -55;
+    const midPow =  -70;
+
     const spheres = {}; // Mappa per tenere traccia delle sfere esistenti
 
     function createTooltip() {
@@ -104,7 +212,7 @@
         referenceSphere.position = new BABYLON.Vector3(0, 0, 0);
 
         // Create an arrow to represent the orientation (Yaw and Pitch) of the reference sphere
-        const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {diameterTop: 0, diameterBottom: 0.5, height: 5}, scene);
+        const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {diameterTop: 0, diameterBottom: 2, height: 10}, scene);
 
         const arrowMaterial = new BABYLON.StandardMaterial("arrowMaterial", scene);
         arrowMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1); // magenta
@@ -114,6 +222,13 @@
         arrow.position = new BABYLON.Vector3(0, 2.5, 0);
         arrow.rotation.x = 0; // Inizialmente parallela al piano
         arrowMesh = arrow;
+
+        // Crea il segnalino sopra la sfera selezionata (una freccia o un altro oggetto)
+        marker = BABYLON.MeshBuilder.CreateCylinder("marker", { diameterTop: 1, diameterBottom: 0, height: 3 }, scene);
+        const markerMaterial = new BABYLON.StandardMaterial("markerMaterial", scene);
+        markerMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0); // Verde chiaro
+        marker.material = markerMaterial;
+        marker.setEnabled(false); // Nascondi il segnalino fino a quando non è necessario
 
         // Start the render loop
         engine.runRenderLoop(() => {
@@ -170,6 +285,9 @@
     function updateScene(frontEndData) {
         const readingMap = frontEndData.wifiDataMap;
 
+        // Aggiorna l'orientamento della sfera di riferimento in base ai dati più recenti del giroscopio
+        updateReferenceSphereOrientation(frontEndData.gyroData);
+
         for (const [bssid, dataReading] of Object.entries(readingMap)) {
             const power = dataReading.highestPower;
             const distance = calculateDistanceFromPower(power);
@@ -194,9 +312,9 @@
             const material = new BABYLON.StandardMaterial("material", scene);
 
             // Imposta il colore della sfera in base alla potenza del segnale
-            if (power >= -55) {
+            if (power >= highPow) {
                 material.diffuseColor = new BABYLON.Color3(0, 1, 0); // verde
-            } else if (power >= -70) {
+            } else if (power >= midPow) {
                 material.diffuseColor = new BABYLON.Color3(1, 1, 0); // Giallo
             } else {
                 material.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Arancione
@@ -239,11 +357,107 @@
 
             console.log(`Sfera disegnata - ESSID: ${dataReading.accessPoint.essid}, BSSID: ${dataReading.accessPoint.bssid}, Posizione: (${sphere.position.x}, ${sphere.position.y}, ${sphere.position.z})`);
         }
-
-        // Aggiorna l'orientamento della sfera di riferimento in base ai dati più recenti del giroscopio
-        updateReferenceSphereOrientation(frontEndData.gyroData);
     }
 
+    // Funzione per aggiornare la lista degli AP trovati nella sidebar
+    function updateAPList(frontEndData) {
+        const apList = document.getElementById('ap-list');
+        apList.innerHTML = ''; // Pulisce la lista attuale
+
+        // Converti l'oggetto wifiDataMap in un array e ordinalo per potenza del segnale (decrescente)
+        const sortedEntries = Object.entries(frontEndData.wifiDataMap).sort(([, a], [, b]) => b.highestPower - a.highestPower);
+
+        // Crea la lista ordinata
+        for (const [bssid, dataReading] of sortedEntries) {
+            const listItem = document.createElement('li');
+            listItem.style.padding = '10px';
+            listItem.style.cursor = 'pointer';
+
+            // Controlla se ci sono associatedStations
+            let itemName = `${dataReading.accessPoint.essid || 'Unknown'} (${bssid})`;
+            if (Array.isArray(dataReading.associatedStations) && dataReading.associatedStations.length > 0) {
+                itemName += ' *'; // Aggiungi un asterisco se ci sono stazioni associate
+            }
+
+            listItem.textContent = itemName;
+
+            // Imposta il colore di sfondo della riga in base alla potenza del segnale
+            if (dataReading.highestPower >= highPow) {
+                listItem.style.backgroundColor = '#90EE90'; //verde chiaro
+            } else if (dataReading.highestPower >= midPow) {
+                listItem.style.backgroundColor = 'yellow';
+            } else {
+                listItem.style.backgroundColor = 'orange';
+            }
+
+            listItem.addEventListener('click', function () {
+                // Popola i campi della modale con i dati dell'AP
+                document.getElementById('apEssid').value = dataReading.accessPoint.essid || 'N/A';
+                document.getElementById('apBssid').value = dataReading.accessPoint.bssid || 'N/A';
+                document.getElementById('apLastSeen').value = dataReading.accessPoint.lastTimeSeen || 'N/A';
+                document.getElementById('apChannel').value = dataReading.accessPoint.channel || 'N/A';
+                document.getElementById('apPrivacy').value = dataReading.accessPoint.privacy || 'N/A';
+                document.getElementById('apCipher').value = dataReading.accessPoint.cipher || 'N/A';
+                document.getElementById('apAuthentication').value = dataReading.accessPoint.authentication || 'N/A';
+                document.getElementById('apPower').value = dataReading.accessPoint.power || 'N/A';
+
+
+                // Popola la tabella delle stazioni associate
+                const stationTableBody = document.getElementById('stationTableBody');
+                stationTableBody.innerHTML = ''; // Pulisce il contenuto precedente
+
+                dataReading.associatedStations.forEach(station => {
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td>${station.stationMac}</td>
+                        <td>${station.firstTimeSeen}</td>
+                        <td>${station.lastTimeSeen}</td>
+                        <td>${station.power} dBm</td>
+                        <td>${station.packets}</td>
+                        <td>${station.bssid}</td>
+                        <td>${station.probedEssids || 'N/A'}</td>
+                    `;
+
+                    stationTableBody.appendChild(row);
+                });
+
+                // Mostra la modale
+                const apModal = new bootstrap.Modal(document.getElementById('apModal'));
+                apModal.show();
+
+                // Seleziona e evidenzia la sfera corrispondente
+                selectSphere(bssid);
+            });
+
+            apList.appendChild(listItem);
+        }
+    }
+
+
+    function positionMarker(sphere) {
+        if (sphere) {
+            // Posiziona il segnalino sopra la sfera
+            marker.position = sphere.position.clone();
+            marker.position.y += 3; // Sposta il segnalino sopra la sfera
+            marker.setEnabled(true); // Rendi visibile il segnalino
+        } else {
+            marker.setEnabled(false); // Nascondi il segnalino se non c'è nessuna sfera selezionata
+        }
+    }
+
+    function selectSphere(bssid) {
+        // Trova la sfera corrispondente al BSSID selezionato
+        const sphere = spheres[bssid];
+        if (sphere) {
+            // Posiziona il segnalino sopra la sfera selezionata
+            positionMarker(sphere);
+            selectedSphere = sphere;
+        } else {
+            // Se non c'è nessuna sfera corrispondente, disabilita il segnalino
+            positionMarker(null);
+        }
+    }
 
 
     function connectWebSocket() {
@@ -255,6 +469,7 @@
 
             dataContainer.innerHTML = JSON.stringify(frontEndData, null, 2);
             updateScene(frontEndData);
+            updateAPList(frontEndData); // Aggiorna la lista degli AP nella sidebar
         };
 
         socket.onclose = function(event) {
@@ -280,6 +495,21 @@
             tooltip.style.top = (event.clientY + 10) + 'px';
         }
     });
+
+    // Mostra/nasconde la sidebar
+    document.getElementById('toggle-sidebar').addEventListener('click', function () {
+        const sidebar = document.getElementById('sidebar');
+        const toggleButton = document.getElementById('toggle-sidebar');
+
+        if (sidebar.style.display === 'none') {
+            sidebar.style.display = 'block';
+            toggleButton.textContent = 'Hide AP List';
+        } else {
+            sidebar.style.display = 'none';
+            toggleButton.textContent = 'Show AP List';
+        }
+    });
+
 </script>
 </body>
 </html>
