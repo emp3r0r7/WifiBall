@@ -1,3 +1,7 @@
+Here's the updated README file with the additional setup details, prerequisites, and images as requested:
+
+---
+
 # Real-Time 3D WiFi Data Visualization
 
 This project visualizes real-time WiFi data in a 3D environment using [Babylon.js](https://www.babylonjs.com/) and a WebSocket connection to stream data from an Android sensor. The data includes access points detected by `airodump-ng`, their signal strength, and the current orientation of the Android device, which is used to position the access points in a 3D space.
@@ -15,16 +19,30 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
   - Red: Below -70 dBm
 - **Sidebar Toggle:** Easily toggle the visibility of a sidebar listing all detected access points.
 
+## Prerequisites
+
+- **Hardware:**
+  - A directional WiFi antenna for accurate signal detection.
+  - An Android device with a gyroscope sensor, mounted on the antenna to track its orientation.
+  - A tripod to stabilize both the antenna and the Android device.
+
+- **Software:**
+  - [Node.js](https://nodejs.org/) (for running a local development server)
+  - [Java 8+](https://www.oracle.com/java/technologies/javase-jdk8-downloads.html) (for backend services)
+  - [Android Studio](https://developer.android.com/studio) (for Android app development and testing)
+  - `airodump-ng` installed on your system.
+
+### Setup Photos
+
+To better understand the physical setup required for this project, refer to the following images:
+
+![WiFiBall Setup 1](https://emp3r0r7.neocities.org/images/wifiball/wifimap_1.jpg)
+*WiFiBall Setup with directional antenna and Android device mounted on a tripod.*
+
+![WiFiBall Setup 2](https://emp3r0r7.neocities.org/images/wifiball/wifimap_2.jpg)
+*Close-up of the Android device mounted on the antenna.*
+
 ## Installation
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (for running a local development server)
-- [Java 8+](https://www.oracle.com/java/technologies/javase-jdk8-downloads.html) (for backend services)
-- [Android Studio](https://developer.android.com/studio) (for Android app development and testing)
-- `airodump-ng` installed on your system.
-
-### Setup
 
 1. **Clone the Repository:**
 
@@ -58,7 +76,7 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
 5. **Configure the Android App:**
 
     - Connect your Android device and ensure it has the necessary sensors enabled.
-    - Build and deploy the companion Android app from `android/` directory.
+    - Build and deploy the companion Android app from the `android/` directory.
 
 6. **Access the Application:**
 
@@ -85,3 +103,6 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
 │   └── lib/               # External libraries (local copies)
 ├── images/                # Image assets for README and the app
 └── README.md              # Project documentation
+```
+
+---
