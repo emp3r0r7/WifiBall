@@ -105,6 +105,11 @@
 
         // Create an arrow to represent the orientation (Yaw and Pitch) of the reference sphere
         const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", {diameterTop: 0, diameterBottom: 0.5, height: 5}, scene);
+
+        const arrowMaterial = new BABYLON.StandardMaterial("arrowMaterial", scene);
+        arrowMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1); // magenta
+        arrow.material = arrowMaterial
+
         arrow.parent = referenceSphere;
         arrow.position = new BABYLON.Vector3(0, 2.5, 0);
         arrow.rotation.x = 0; // Inizialmente parallela al piano
@@ -189,12 +194,12 @@
             const material = new BABYLON.StandardMaterial("material", scene);
 
             // Imposta il colore della sfera in base alla potenza del segnale
-            if (power >= -45) {
-                material.diffuseColor = new BABYLON.Color3(0, 0, 1); // Blu
+            if (power >= -55) {
+                material.diffuseColor = new BABYLON.Color3(0, 1, 0); // verde
             } else if (power >= -70) {
                 material.diffuseColor = new BABYLON.Color3(1, 1, 0); // Giallo
             } else {
-                material.diffuseColor = new BABYLON.Color3(1, 0, 0); // Rosso
+                material.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Arancione
             }
 
             sphere.material = material;

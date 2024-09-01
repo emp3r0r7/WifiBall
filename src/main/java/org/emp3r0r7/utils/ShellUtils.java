@@ -56,7 +56,7 @@ public class ShellUtils {
 
         }
 
-        LOGGER.error("Cannot determine network card mode status, exiting..");
+        LOGGER.error("Cannot determine network card mode status make sure the wifi network card is connected, exiting..");
         System.exit(1);
         return null;
     }
