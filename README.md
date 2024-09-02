@@ -57,13 +57,13 @@ To better understand the physical setup required for this project, refer to the 
 
 3. **Run the Application:**
 
-    Build and run the application to handle WebSocket connections and manage WiFi data:
+    Build and run the application (sudo is required) to handle WebSocket connections and manage WiFi data:
 
     ```bash
     cd wifiball 
     ./mvnw clean package
     cp /target/wifiball.jar /your/desired/location
-    java -jar /your/desired/location/wifiball.jar
+    sudo java -jar /your/desired/location/wifiball.jar
     ```
     
 4. **Connect your Android Device**
@@ -98,5 +98,11 @@ To better understand the physical setup required for this project, refer to the 
   - Hover over an access point to see detailed information about it in a tooltip.
 - **Toggle Sidebar:**
   - Click the "Show AP List" button to toggle the visibility of the sidebar listing all detected access points and their associated stations.
+
+
+
+---
+
+Im not a front-end developer so feel free to contribute if you want to improve the 3d web page!
 
 ---
