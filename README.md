@@ -1,12 +1,8 @@
-Here's the updated README file with the additional setup details, prerequisites, and images as requested:
+# WifiBall : Real-Time 3D WiFi Data Visualization
 
----
+This project visualizes real-time WiFi data in a 3D environment using [Babylon.js](https://www.babylonjs.com/) and a WebSocket connection to stream data from an Android device gyroscope information. The data includes access points detected by `airodump-ng`, their signal strength, and the current orientation of the Android device, which is used to position the access points in a 3D space.
 
-# Real-Time 3D WiFi Data Visualization
-
-This project visualizes real-time WiFi data in a 3D environment using [Babylon.js](https://www.babylonjs.com/) and a WebSocket connection to stream data from an Android sensor. The data includes access points detected by `airodump-ng`, their signal strength, and the current orientation of the Android device, which is used to position the access points in a 3D space.
-
-![Project Overview](./images/overview.png)
+![Project Overview](https://emp3r0r7.neocities.org/images/wifiball/wifimap_4.jpg)
 
 ## Features
 
@@ -18,19 +14,21 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
   - Yellow: -45 to -70 dBm
   - Red: Below -70 dBm
 - **Sidebar Toggle:** Easily toggle the visibility of a sidebar listing all detected access points.
+- **Associated Stations:** You can see each associated station to the selected access point.
+
 
 ## Prerequisites
 
 - **Hardware:**
   - A directional WiFi antenna for accurate signal detection.
+  - A WiFi card capable of monitor mode es. [Alfa AWUS036NHA](https://www.alfa.com.tw/products/awus036nha?variant=36473966166088)
   - An Android device with a gyroscope sensor, mounted on the antenna to track its orientation.
-  - A tripod to stabilize both the antenna and the Android device.
+  - A tripod to stabilize both the antenna and the Android device during the scan.
 
 - **Software:**
-  - [Node.js](https://nodejs.org/) (for running a local development server)
-  - [Java 8+](https://www.oracle.com/java/technologies/javase-jdk8-downloads.html) (for backend services)
-  - [Android Studio](https://developer.android.com/studio) (for Android app development and testing)
-  - `airodump-ng` installed on your system.
+  - Linux environment (I developed it on Debian)
+  - [Java 21+](https://www.openlogic.com/openjdk-downloads?field_java_parent_version_target_id=828&field_operating_system_target_id=426&field_architecture_target_id=All&field_java_package_target_id=All) the application is a SpringBoot app relying on Java 21
+  - `aircrack-ng` suite installed on your system.
 
 ### Setup Photos
 
@@ -56,27 +54,32 @@ To better understand the physical setup required for this project, refer to the 
     sudo apt-get install aircrack-ng
     ```
 
-3. **Serve the Application:**
-
-    Serve the web application using a local development server:
-
-    ```bash
-    npm start
-    ```
-
-4. **Run the Backend:**
+3. **Run the Application:**
 
     Build and run the backend application to handle WebSocket connections and manage WiFi data:
 
     ```bash
-    ./gradlew build
-    java -jar build/libs/realtime-wifi-visualization.jar
+    cd wifiball 
+    ./mvnw clean package
+    cp /target/wifiball.jar /your/desired/location
+    java -jar /your/desired/location/wifiball.jar
     ```
+    
+4. **Connect your Android Device**
 
-5. **Configure the Android App:**
+    - Launch the [Android App](https://github.com/emp3r0r7/GyroScope)
+    - Connect your Android Device in the same network of your computer
+    - Input your computer lan ip and WifiBall default port 8011
 
-    - Connect your Android device and ensure it has the necessary sensors enabled.
-    - Build and deploy the companion Android app from the `android/` directory.
+5. **Configure WifiBall**
+
+    - Set your network interface card capable of monitor mode 
+
+     ```bash
+    cd ~
+    nano .wifiball/config.properties
+    set your network card accordingly
+    ```
 
 6. **Access the Application:**
 
@@ -91,18 +94,5 @@ To better understand the physical setup required for this project, refer to the 
 - **Toggle Sidebar:**
   - Click the "Show AP List" button to toggle the visibility of the sidebar listing all detected access points.
 
-## Project Structure
-
-```bash
-├── android/               # Android app source code
-├── backend/               # Backend service source code
-├── frontend/              # Frontend (Web) source code
-│   ├── index.html         # Main HTML file
-│   ├── css/               # Stylesheets
-│   ├── js/                # JavaScript files (Babylon.js, etc.)
-│   └── lib/               # External libraries (local copies)
-├── images/                # Image assets for README and the app
-└── README.md              # Project documentation
-```
 
 ---
