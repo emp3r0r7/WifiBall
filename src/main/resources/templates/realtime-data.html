@@ -585,7 +585,7 @@
 
             apList.appendChild(listItem);
         }
-    }, 1000); // Debounce di 300 ms
+    }, 500);
 
     // Funzione per aggiornare la lista delle stazioni non associate trovate nella sidebar
     const updateStationList = debounce(function(frontEndData) {
@@ -632,7 +632,7 @@
 
             stationList.appendChild(listItem);
         }
-    }, 1000); // Debounce di 1000 ms
+    }, 500);
 
 
     function selectStationSphere(stationMac) {
