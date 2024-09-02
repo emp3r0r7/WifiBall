@@ -16,7 +16,7 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
   - Red: Below -70 dBm
 - **Sidebar Toggle:** Easily toggle the visibility of a sidebar listing all detected access points.
 - **Associated Stations:** You can see each associated station to the selected access point.
-
+- **Not Associated Stations:** You can see roaming devices around not associated to any station and their probes!
 
 ## Prerequisites
 
@@ -55,15 +55,15 @@ To better understand the physical setup required for this project, refer to the 
     sudo apt install aircrack-ng
     ```
 
-3. **Run the Application:**
+3. **Build and Run the Application:**
 
     Build and run the application (sudo is required) to handle WebSocket connections and manage WiFi data:
 
     ```bash
     cd wifiball 
     ./mvnw clean package
-    cp /target/wifiball.jar /your/desired/location
-    sudo java -jar /your/desired/location/wifiball.jar
+    cp /target/WifiBall-0.0.1-Alpha.jar /your/desired/location
+    sudo java -jar /your/desired/location/WifiBall-0.0.1-Alpha.jar
     ```
     
 4. **Connect your Android Device**
@@ -81,11 +81,12 @@ To better understand the physical setup required for this project, refer to the 
     sudo nano /root/.wifiball/config.properties
     
     ```
-    Set your network card accordingly at network.card, always put the card managed state eg. wlan0 instead of wlan0mon
+    Set your network card accordingly at `network.card`, always put the card managed state eg. wlan0 instead of wlan0mon
 
 6. **Access the Application:**
 
-    Open your web browser and navigate to `http://localhost:8011/` to see the real-time 3D visualization.
+    Open your web browser and navigate to `http://localhost:8011/realtime-data` to see the real-time 3D visualization.
+
 
 ## Usage
 
@@ -103,6 +104,6 @@ To better understand the physical setup required for this project, refer to the 
 
 ---
 
-Im not a front-end developer so feel free to contribute if you want to improve the 3d web page!
+Im not a front-end developer so feel free to contribute if you want to improve the 3d html web page! (at the moment its a bit messy but i'll make it better)
 
 ---
