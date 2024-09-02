@@ -41,17 +41,26 @@
 
 <body>
 <div id="header" class="d-flex align-items-center">
-    <h1>Real-Time WiFi Data in 3D</h1>
-    <button id="toggle-sidebar" class="btn btn-primary ms-3">Show AP List</button>
+    <h1>WifiBall - 3D Viewer</h1>
+    <button id="toggle-sidebar-ap" class="btn btn-secondary ms-3">Show AP List</button>
+    <button id="hide-ap" class="btn btn-success ms-3">Hide APs</button>
+    <button id="toggle-sidebar-station" class="btn btn-secondary ms-3">Show Stations List</button>
+    <button id="hide-station" class="btn btn-success ms-3">Hide Stations</button>
 </div>
+
 <div id="data-container"></div>
 <div id="tooltip"></div>
 
-<div id="sidebar" style="display:none; position: absolute; right: 0; top: 0; width: 250px; height: 100%; background-color: #f8f8f8; border-left: 1px solid #ccc; overflow-y: auto;">
+<div id="sidebar-ap" style="display:none; position: absolute; right: 0; top: 0; width: 250px; height: 100%; background-color: #f8f8f8; border-left: 1px solid #ccc; overflow-y: auto;">
     <h3 class="p-3">Access Points</h3>
-    <ul id="ap-list" style="list-style-type: none; padding: 0;">
-    </ul>
+    <ul id="ap-list" style="list-style-type: none; padding: 0;"></ul>
 </div>
+
+<div id="sidebar-station" style="display:none; position: absolute; right: 0; top: 0; width: 250px; height: 100%; background-color: #f8f8f8; border-left: 1px solid #ccc; overflow-y: auto;">
+    <h3 class="p-3">Not Associated Stations</h3>
+    <ul id="station-list" style="list-style-type: none; padding: 0;"></ul>
+</div>
+
 
 <!-- Modale per mostrare i dettagli dell'AP -->
 <div class="modal fade" id="apModal" tabindex="-1" aria-labelledby="apModalLabel" aria-hidden="true">
@@ -124,6 +133,54 @@
     </div>
 </div>
 
+<!-- Modale per mostrare i dettagli della stazione non associata -->
+<div class="modal fade" id="stationModal" tabindex="-1" aria-labelledby="stationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="height: 80vh;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stationModalLabel">Station Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stationDetailsForm" class="row">
+                    <!-- Dettagli Station -->
+                    <div class="col-md-6 mb-3">
+                        <label for="stationMac" class="form-label">Station MAC</label>
+                        <input type="text" class="form-control" id="stationMac" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationFirstSeen" class="form-label">First Time Seen</label>
+                        <input type="text" class="form-control" id="stationFirstSeen" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationLastSeen" class="form-label">Last Time Seen</label>
+                        <input type="text" class="form-control" id="stationLastSeen" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationPower" class="form-label">Power</label>
+                        <input type="text" class="form-control" id="stationPower" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationPackets" class="form-label">Packets</label>
+                        <input type="text" class="form-control" id="stationPackets" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationBssid" class="form-label">BSSID</label>
+                        <input type="text" class="form-control" id="stationBssid" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stationProbedEssids" class="form-label">Probed ESSIDs</label>
+                        <input type="text" class="form-control" id="stationProbedEssids" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="/js/babylon.js"></script>
 <script src="/js/babylon_loaders.js"></script>
 <script src="/js/babylon_gridmaterial.js"></script>
@@ -143,7 +200,11 @@
     const highPow = -55;
     const midPow =  -70;
 
-    const spheres = {}; // Mappa per tenere traccia delle sfere esistenti
+    let apVisible = true;  // Stato di visibilità degli AP
+    let stationVisible = true;  // Stato di visibilità delle stations
+
+    const wifiSpheres = {};
+    const stationSpheres = {};// Mappa per tenere traccia delle sfere esistenti
 
     function createTooltip() {
         const tooltip = document.getElementById('tooltip');
@@ -252,7 +313,7 @@
         return BABYLON.Scalar.Lerp(maxDistance, minDistance, (power + 100) / 80); // Normalizza il valore tra 0 e 1
     }
 
-    function calculatePositionFromGyroAndPower(gyroData, distance, arrowMesh) {
+    function calculatePositionFromGyroAndPower(distance, arrowMesh) {
         const pitchRadians = arrowMesh.rotation.x + Math.PI / 2; // Pitch
         const yawRadians = arrowMesh.rotation.y; // Yaw
 
@@ -284,24 +345,25 @@
     }
 
     function updateScene(frontEndData) {
-        const readingMap = frontEndData.wifiDataMap;
+        const wifiDataMap = frontEndData.wifiDataMap;
+        const notAssociatedStationDataMap = frontEndData.notAssociatedStationDataMap;
 
         // Aggiorna l'orientamento della sfera di riferimento in base ai dati più recenti del giroscopio
         updateReferenceSphereOrientation(frontEndData.gyroData);
 
-        for (const [bssid, dataReading] of Object.entries(readingMap)) {
-            const power = dataReading.highestPower;
+        for (const [bssid, apData] of Object.entries(wifiDataMap)) {
+            const power = apData.highestPower;
             const distance = calculateDistanceFromPower(power);
 
             // Passa l'orientamento corrente della freccia (arrowMesh) alla funzione di calcolo della posizione
-            const position = calculatePositionFromGyroAndPower(dataReading.gyroData, distance, arrowMesh);
+            const position = calculatePositionFromGyroAndPower(distance, arrowMesh);
 
             // Verifica se la sfera esiste già e confronta la potenza
-            if (spheres[bssid]) {
-                if (power > spheres[bssid].currentPower) {
+            if (wifiSpheres[bssid]) {
+                if (power > wifiSpheres[bssid].currentPower) {
                     // Rimuovi la sfera esistente solo se la nuova potenza è maggiore
-                    spheres[bssid].dispose();
-                    delete spheres[bssid];
+                    wifiSpheres[bssid].dispose();
+                    delete wifiSpheres[bssid];
                 } else {
                     // Se la potenza non è maggiore, salta al prossimo access point
                     continue;
@@ -309,7 +371,7 @@
             }
 
             // Crea una nuova sfera
-            const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2}, scene);
+            const wifiSphere = BABYLON.MeshBuilder.CreateSphere("sphere", {diameter: 2}, scene);
             const material = new BABYLON.StandardMaterial("material", scene);
 
             // Imposta il colore della sfera in base alla potenza del segnale
@@ -321,34 +383,35 @@
                 material.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Arancione
             }
 
-            sphere.material = material;
-            spheres[bssid] = sphere;
-            spheres[bssid].currentPower = power;  // Memorizza la potenza corrente
+            wifiSphere.material = material;
+            wifiSpheres[bssid] = wifiSphere;
+            wifiSpheres[bssid].currentPower = power;  // Memorizza la potenza corrente
 
             // Posiziona la nuova sfera basata sulla posizione della freccia
-            sphere.position = position.add(referenceSphere.position);
+            wifiSphere.position = position.add(referenceSphere.position);
 
             // Aggiungi ActionManager per gestire mouseover e mouseout
-            sphere.actionManager = new BABYLON.ActionManager(scene);
-            sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+            wifiSphere.actionManager = new BABYLON.ActionManager(scene);
+            wifiSphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPointerOverTrigger,
                 function (evt) {
                     const tooltip = document.getElementById('tooltip');
                     tooltip.innerHTML = `
-                    <strong>ESSID:</strong> ${dataReading.accessPoint.essid}<br>
-                    <strong>BSSID:</strong> ${dataReading.accessPoint.bssid}<br>
-                    <strong>Last Seen:</strong> ${dataReading.accessPoint.lastTimeSeen}<br>
-                    <strong>Channel:</strong> ${dataReading.accessPoint.channel}<br>
-                    <strong>Privacy:</strong> ${dataReading.accessPoint.privacy}<br>
-                    <strong>Cipher:</strong> ${dataReading.accessPoint.cipher}<br>
-                    <strong>Authentication:</strong> ${dataReading.accessPoint.authentication}<br>
-                    <strong>Power:</strong> ${dataReading.accessPoint.power}<br>
+                    <strong>Type:</strong> Access Point<br>
+                    <strong>ESSID:</strong> ${apData.accessPoint.essid}<br>
+                    <strong>BSSID:</strong> ${apData.accessPoint.bssid}<br>
+                    <strong>Last Seen:</strong> ${apData.accessPoint.lastTimeSeen}<br>
+                    <strong>Channel:</strong> ${apData.accessPoint.channel}<br>
+                    <strong>Privacy:</strong> ${apData.accessPoint.privacy}<br>
+                    <strong>Cipher:</strong> ${apData.accessPoint.cipher}<br>
+                    <strong>Authentication:</strong> ${apData.accessPoint.authentication}<br>
+                    <strong>Power:</strong> ${apData.accessPoint.power}<br>
                 `;
                     tooltip.style.display = 'block';
                 }
             ));
 
-            sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+            wifiSphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPointerOutTrigger,
                 function (evt) {
                     const tooltip = document.getElementById('tooltip');
@@ -356,8 +419,89 @@
                 }
             ));
 
-            console.log(`Sfera disegnata - ESSID: ${dataReading.accessPoint.essid}, BSSID: ${dataReading.accessPoint.bssid}, Posizione: (${sphere.position.x}, ${sphere.position.y}, ${sphere.position.z})`);
+            if (!apVisible) {
+                wifiSphere.setEnabled(false);
+            }
+
+            console.log(`Sfera disegnata - ESSID: ${apData.accessPoint.essid}, BSSID: ${apData.accessPoint.bssid}, Posizione: (${wifiSphere.position.x}, ${wifiSphere.position.y}, ${wifiSphere.position.z})`);
         }
+
+        // Gestisci le stazioni non associate
+        for (const [stationMac, stationData] of Object.entries(notAssociatedStationDataMap)) {
+            const power = stationData.highestPower;
+            const distance = calculateDistanceFromPower(power);
+
+            // Passa l'orientamento corrente della freccia (arrowMesh) alla funzione di calcolo della posizione
+            const position = calculatePositionFromGyroAndPower(distance, arrowMesh);
+
+            // Verifica se la sfera esiste già e confronta la potenza
+            if (stationSpheres[stationMac]) {
+                if (power > stationSpheres[stationMac].currentPower) {
+                    // Rimuovi la sfera esistente solo se la nuova potenza è maggiore
+                    stationSpheres[stationMac].dispose();
+                    delete stationSpheres[stationMac];
+                } else {
+                    // Se la potenza non è maggiore, salta alla prossima stazione
+                    continue;
+                }
+            }
+
+            // Crea una nuova sfera per la stazione non associata
+            const stationSphere = BABYLON.MeshBuilder.CreateSphere("stationSphere", {diameter: 1.5}, scene);
+            const material = new BABYLON.StandardMaterial("material", scene);
+
+            // Imposta il colore della sfera in base alla potenza del segnale
+            if (power >= highPow) {
+                material.diffuseColor = new BABYLON.Color3(1, 0, 0); // rosso
+            } else if (power >= midPow) {
+                material.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Arancione
+            } else {
+                material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5); // Grigio
+            }
+
+            stationSphere.material = material;
+            stationSpheres[stationMac] = stationSphere;
+            stationSpheres[stationMac].currentPower = power;  // Memorizza la potenza corrente
+
+            // Posiziona la nuova sfera basata sulla posizione della freccia
+            stationSphere.position = position.add(referenceSphere.position);
+
+            // Aggiungi ActionManager per gestire mouseover e mouseout
+            stationSphere.actionManager = new BABYLON.ActionManager(scene);
+            stationSphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOverTrigger,
+                function (evt) {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.innerHTML = `
+                            <strong>Type:</strong> Not Associated Station<br>
+                            <strong>BSSID:</strong> ${stationData.station.stationMac}<br>
+                            <strong>First Time Seen:</strong> ${stationData.station.firstTimeSeen}<br>
+                            <strong>Last Seen:</strong> ${stationData.station.lastTimeSeen}<br>
+                            <strong>Power:</strong> ${stationData.station.power} dBm<br>
+                            <strong>Packets:</strong> ${stationData.station.packets}<br>
+                            <strong>BSSID:</strong> ${stationData.station.bssid}<br>
+                            <strong>Probed ESSIDs:</strong> ${stationData.station.probedEssids || 'N/A'}<br>
+                    `;
+                    tooltip.style.display = 'block';
+                }
+            ));
+
+            stationSphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPointerOutTrigger,
+                function (evt) {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.display = 'none';
+                }
+            ));
+
+            // Mantieni nascosto se le stazioni sono nascoste
+            if (!stationVisible) {
+                stationSphere.setEnabled(false);
+            }
+
+            console.log(`Sfera disegnata - Station MAC: ${stationData.station.stationMac}, Posizione: (${stationSphere.position.x}, ${stationSphere.position.y}, ${stationSphere.position.z})`);
+        }
+
     }
 
     function debounce(func, wait) {
@@ -378,23 +522,23 @@
         const sortedEntries = Object.entries(frontEndData.wifiDataMap).sort(([, a], [, b]) => b.highestPower - a.highestPower);
 
         // Crea la lista ordinata
-        for (const [bssid, dataReading] of sortedEntries) {
+        for (const [bssid, apData] of sortedEntries) {
             const listItem = document.createElement('li');
             listItem.style.padding = '10px';
             listItem.style.cursor = 'pointer';
 
             // Controlla se ci sono associatedStations
-            let itemName = `${dataReading.accessPoint.essid || 'Unknown'} (${bssid})`;
-            if (Array.isArray(dataReading.associatedStations) && dataReading.associatedStations.length > 0) {
+            let itemName = `${apData.accessPoint.essid || 'Unknown'} (${bssid})`;
+            if (Array.isArray(apData.associatedStations) && apData.associatedStations.length > 0) {
                 itemName += ' *'; // Aggiungi un asterisco se ci sono stazioni associate
             }
 
             listItem.textContent = itemName;
 
             // Imposta il colore di sfondo della riga in base alla potenza del segnale
-            if (dataReading.highestPower >= highPow) {
+            if (apData.highestPower >= highPow) {
                 listItem.style.backgroundColor = '#90EE90'; //verde chiaro
-            } else if (dataReading.highestPower >= midPow) {
+            } else if (apData.highestPower >= midPow) {
                 listItem.style.backgroundColor = 'yellow';
             } else {
                 listItem.style.backgroundColor = 'orange';
@@ -402,20 +546,20 @@
 
             listItem.addEventListener('click', function () {
                 // Popola i campi della modale con i dati dell'AP
-                document.getElementById('apEssid').value = dataReading.accessPoint.essid || 'N/A';
-                document.getElementById('apBssid').value = dataReading.accessPoint.bssid || 'N/A';
-                document.getElementById('apLastSeen').value = dataReading.accessPoint.lastTimeSeen || 'N/A';
-                document.getElementById('apChannel').value = dataReading.accessPoint.channel || 'N/A';
-                document.getElementById('apPrivacy').value = dataReading.accessPoint.privacy || 'N/A';
-                document.getElementById('apCipher').value = dataReading.accessPoint.cipher || 'N/A';
-                document.getElementById('apAuthentication').value = dataReading.accessPoint.authentication || 'N/A';
-                document.getElementById('apPower').value = dataReading.accessPoint.power || 'N/A';
+                document.getElementById('apEssid').value = apData.accessPoint.essid || 'N/A';
+                document.getElementById('apBssid').value = apData.accessPoint.bssid || 'N/A';
+                document.getElementById('apLastSeen').value = apData.accessPoint.lastTimeSeen || 'N/A';
+                document.getElementById('apChannel').value = apData.accessPoint.channel || 'N/A';
+                document.getElementById('apPrivacy').value = apData.accessPoint.privacy || 'N/A';
+                document.getElementById('apCipher').value = apData.accessPoint.cipher || 'N/A';
+                document.getElementById('apAuthentication').value = apData.accessPoint.authentication || 'N/A';
+                document.getElementById('apPower').value = apData.accessPoint.power || 'N/A';
 
                 // Popola la tabella delle stazioni associate
                 const stationTableBody = document.getElementById('stationTableBody');
                 stationTableBody.innerHTML = ''; // Pulisce il contenuto precedente
 
-                dataReading.associatedStations.forEach(station => {
+                apData.associatedStations.forEach(station => {
                     const row = document.createElement('tr');
 
                     row.innerHTML = `
@@ -436,13 +580,86 @@
                 apModal.show();
 
                 // Seleziona e evidenzia la sfera corrispondente
-                selectSphere(bssid);
+                selectApSphere(bssid);
             });
 
             apList.appendChild(listItem);
         }
     }, 1000); // Debounce di 300 ms
 
+    // Funzione per aggiornare la lista delle stazioni non associate trovate nella sidebar
+    const updateStationList = debounce(function(frontEndData) {
+        const stationList = document.getElementById('station-list');
+        stationList.innerHTML = ''; // Pulisce la lista attuale
+
+        // Converti l'oggetto notAssociatedStationDataMap in un array e ordinalo per potenza del segnale (decrescente)
+        const sortedEntries = Object.entries(frontEndData.notAssociatedStationDataMap).sort(([, a], [, b]) => b.highestPower - a.highestPower);
+
+        // Crea la lista ordinata
+        for (const [stationMac, stationData] of sortedEntries) {
+            const listItem = document.createElement('li');
+            listItem.style.padding = '10px';
+            listItem.style.cursor = 'pointer';
+
+            listItem.textContent = `${stationData.station.stationMac} (${stationData.highestPower} dBm)`;
+
+            // Imposta il colore di sfondo della riga in base alla potenza del segnale
+            if (stationData.highestPower >= highPow) {
+                listItem.style.backgroundColor = '#FF9999'; // rosso chiaro
+            } else if (stationData.highestPower >= midPow) {
+                listItem.style.backgroundColor = '#FFCC99'; // arancione chiaro
+            } else {
+                listItem.style.backgroundColor = '#CCCCCC'; // grigio chiaro
+            }
+
+            listItem.addEventListener('click', function () {
+                // Popola i campi della modale con i dati della stazione non associata
+                document.getElementById('stationMac').value = stationData.station.stationMac || 'N/A';
+                document.getElementById('stationFirstSeen').value = stationData.station.firstTimeSeen || 'N/A';
+                document.getElementById('stationLastSeen').value = stationData.station.lastTimeSeen || 'N/A';
+                document.getElementById('stationPower').value = stationData.station.power + ' dBm' || 'N/A';
+                document.getElementById('stationPackets').value = stationData.station.packets || 'N/A';
+                document.getElementById('stationBssid').value = stationData.station.bssid || 'N/A';
+                document.getElementById('stationProbedEssids').value = stationData.station.probedEssids || 'N/A';
+
+                // Mostra la modale
+                const stationModal = new bootstrap.Modal(document.getElementById('stationModal'));
+                stationModal.show();
+
+                // Seleziona e evidenzia la sfera corrispondente
+                selectStationSphere(stationMac);
+            });
+
+            stationList.appendChild(listItem);
+        }
+    }, 1000); // Debounce di 1000 ms
+
+
+    function selectStationSphere(stationMac) {
+        // Trova la sfera corrispondente al MAC della stazione selezionata
+        const sphere = stationSpheres[stationMac];
+        if (sphere) {
+            // Posiziona il segnalino sopra la sfera selezionata
+            positionMarker(sphere);
+            selectedSphere = sphere;
+        } else {
+            // Se non c'è nessuna sfera corrispondente, disabilita il segnalino
+            positionMarker(null);
+        }
+    }
+
+    function selectApSphere(bssid) {
+        // Trova la sfera corrispondente al BSSID selezionato
+        const sphere = wifiSpheres[bssid];
+        if (sphere) {
+            // Posiziona il segnalino sopra la sfera selezionata
+            positionMarker(sphere);
+            selectedSphere = sphere;
+        } else {
+            // Se non c'è nessuna sfera corrispondente, disabilita il segnalino
+            positionMarker(null);
+        }
+    }
 
     function positionMarker(sphere) {
         if (sphere) {
@@ -455,20 +672,6 @@
         }
     }
 
-    function selectSphere(bssid) {
-        // Trova la sfera corrispondente al BSSID selezionato
-        const sphere = spheres[bssid];
-        if (sphere) {
-            // Posiziona il segnalino sopra la sfera selezionata
-            positionMarker(sphere);
-            selectedSphere = sphere;
-        } else {
-            // Se non c'è nessuna sfera corrispondente, disabilita il segnalino
-            positionMarker(null);
-        }
-    }
-
-
     function connectWebSocket() {
         const socket = new WebSocket(webSocketEndpoint);
 
@@ -479,6 +682,7 @@
             dataContainer.innerHTML = JSON.stringify(frontEndData, null, 2);
             updateScene(frontEndData);
             updateAPList(frontEndData); // Aggiorna la lista degli AP nella sidebar
+            updateStationList(frontEndData); // Aggiorna la lista delle stazioni non associate
         };
 
         socket.onclose = function(event) {
@@ -505,19 +709,84 @@
         }
     });
 
-    // Mostra/nasconde la sidebar
-    document.getElementById('toggle-sidebar').addEventListener('click', function () {
-        const sidebar = document.getElementById('sidebar');
-        const toggleButton = document.getElementById('toggle-sidebar');
-
-        if (sidebar.style.display === 'none') {
-            sidebar.style.display = 'block';
-            toggleButton.textContent = 'Hide AP List';
-        } else {
-            sidebar.style.display = 'none';
-            toggleButton.textContent = 'Show AP List';
-        }
+    document.getElementById('toggle-sidebar-ap').addEventListener('click', function () {
+        toggleSidebar('ap');
     });
+
+    document.getElementById('toggle-sidebar-station').addEventListener('click', function () {
+        toggleSidebar('station');
+    });
+
+    function toggleSidebar(type) {
+        const sidebarAP = document.getElementById('sidebar-ap');
+        const sidebarStation = document.getElementById('sidebar-station');
+        const toggleButtonAP = document.getElementById('toggle-sidebar-ap');
+        const toggleButtonStation = document.getElementById('toggle-sidebar-station');
+
+        if (type === 'ap') {
+            if (sidebarAP.style.display === 'none') {
+                sidebarAP.style.display = 'block';
+                sidebarStation.style.display = 'none';
+                toggleButtonAP.textContent = 'Hide AP List';
+                toggleButtonAP.classList.add('btn-primary');
+                toggleButtonAP.classList.remove('btn-secondary');
+                toggleButtonStation.textContent = 'Show Stations List';
+                toggleButtonStation.classList.add('btn-secondary');
+                toggleButtonStation.classList.remove('btn-warning');
+            } else {
+                sidebarAP.style.display = 'none';
+                toggleButtonAP.textContent = 'Show AP List';
+                toggleButtonAP.classList.add('btn-secondary');
+                toggleButtonAP.classList.remove('btn-primary');
+            }
+        } else if (type === 'station') {
+            if (sidebarStation.style.display === 'none') {
+                sidebarStation.style.display = 'block';
+                sidebarAP.style.display = 'none';
+                toggleButtonStation.textContent = 'Hide Stations List';
+                toggleButtonStation.classList.add('btn-warning');
+                toggleButtonStation.classList.remove('btn-secondary');
+                toggleButtonAP.textContent = 'Show AP List';
+                toggleButtonAP.classList.add('btn-secondary');
+                toggleButtonAP.classList.remove('btn-primary');
+            } else {
+                sidebarStation.style.display = 'none';
+                toggleButtonStation.textContent = 'Show Stations List';
+                toggleButtonStation.classList.add('btn-secondary');
+                toggleButtonStation.classList.remove('btn-warning');
+            }
+        }
+    }
+
+
+    document.getElementById('hide-ap').addEventListener('click', function() {
+        apVisible = !apVisible;  // Cambia lo stato di visibilità
+        toggleVisibility(apVisible, wifiSpheres);  // Passa lo stato corrente e le sfere degli AP
+
+        // Aggiorna il testo e il colore del bottone in base allo stato di visibilità
+        this.textContent = apVisible ? 'Hide APs' : 'Show APs';
+        this.classList.toggle('btn-success', apVisible);  // Colore verde quando attivo
+        this.classList.toggle('btn-secondary', !apVisible);  // Colore grigio quando disattivo
+    });
+
+    document.getElementById('hide-station').addEventListener('click', function() {
+        stationVisible = !stationVisible;  // Cambia lo stato di visibilità
+        toggleVisibility(stationVisible, stationSpheres);  // Passa lo stato corrente e le sfere delle stations
+
+        // Aggiorna il testo e il colore del bottone in base allo stato di visibilità
+        this.textContent = stationVisible ? 'Hide Stations' : 'Show Stations';
+        this.classList.toggle('btn-success', stationVisible);  // Colore verde quando attivo
+        this.classList.toggle('btn-secondary', !stationVisible);  // Colore grigio quando disattivo
+    });
+
+
+    function toggleVisibility(visible, spheres) {
+        for (let key in spheres) {
+            if (spheres.hasOwnProperty(key)) {
+                spheres[key].setEnabled(visible);  // Mostra o nasconde la sfera
+            }
+        }
+    }
 
 </script>
 </body>

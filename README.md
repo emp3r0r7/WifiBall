@@ -78,7 +78,7 @@ To better understand the physical setup required for this project, refer to the 
 
      ```bash
     cd ~
-    nano .wifiball/config.properties
+    sudo nano /root/.wifiball/config.properties
     
     ```
     Set your network card accordingly at network.card, always put the card managed state eg. wlan0 instead of wlan0mon

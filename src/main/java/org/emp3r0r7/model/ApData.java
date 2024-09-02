@@ -7,9 +7,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class DataReading {
-
-    private GyroData gyroData;
+public class ApData {
 
     private int highestPower;
 
