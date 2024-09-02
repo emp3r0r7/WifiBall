@@ -8,6 +8,7 @@ import org.emp3r0r7.thread.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -86,6 +87,9 @@ public class AirodumpProcess implements IProcess {
 
         try {
             LOGGER.info("{} launching command : {}", this.getClass().getSimpleName(), command);
+
+            if(new File(TEMP_PATH).mkdir())
+                LOGGER.info("Created temp dir {}", TEMP_PATH);
 
             this.process = processBuilder.start();
             ThreadUtils.addShutdownHook(process, LOGGER);

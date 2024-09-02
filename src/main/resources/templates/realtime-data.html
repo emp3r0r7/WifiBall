@@ -132,7 +132,8 @@
 
 <script>
 
-    let webSocketEndpoint = `ws://192.168.1.124:[[${port}]][[${webSocketEndpoint}]]`;
+    //use 192.168.1.... instead of localhost if you are accessing the web page from another pc in lan
+    let webSocketEndpoint = `ws://localhost:[[${port}]][[${webSocketEndpoint}]]`;
 
     let canvas, engine, scene, camera, ground;
     let referenceSphere, arrowMesh;
@@ -359,8 +360,17 @@
         }
     }
 
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+
     // Funzione per aggiornare la lista degli AP trovati nella sidebar
-    function updateAPList(frontEndData) {
+    const updateAPList = debounce(function(frontEndData) {
         const apList = document.getElementById('ap-list');
         apList.innerHTML = ''; // Pulisce la lista attuale
 
@@ -401,7 +411,6 @@
                 document.getElementById('apAuthentication').value = dataReading.accessPoint.authentication || 'N/A';
                 document.getElementById('apPower').value = dataReading.accessPoint.power || 'N/A';
 
-
                 // Popola la tabella delle stazioni associate
                 const stationTableBody = document.getElementById('stationTableBody');
                 stationTableBody.innerHTML = ''; // Pulisce il contenuto precedente
@@ -432,7 +441,7 @@
 
             apList.appendChild(listItem);
         }
-    }
+    }, 1000); // Debounce di 300 ms
 
 
     function positionMarker(sphere) {
