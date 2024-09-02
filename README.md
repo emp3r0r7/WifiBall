@@ -16,7 +16,7 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
   - Red: Below -70 dBm
 - **Sidebar Toggle:** Easily toggle the visibility of a sidebar listing all detected access points.
 - **Associated Stations:** You can see each associated station to the selected access point.
-- **Not Associated Stations:** You can see roaming devices around not associated to any station and their probes!
+- **Not Associated Stations:** You can see roaming devices around not associated to any access point and their probes (searched Ap's)!
 
 ## Prerequisites
 
