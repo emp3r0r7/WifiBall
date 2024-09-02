@@ -15,7 +15,8 @@ import static org.emp3r0r7.utils.StringUtil.safeTrim;
 
 public class CsvParser {
 
-    private static final String DEVICE_DELIMITER = "Station MAC";
+    public static final String DEVICE_DELIMITER = "Station MAC";
+    public static final String NOT_ASSOCIATED = "(not associated)";
 
     public static List<AccessPoint> parseAccessPoints(String filePath) {
         List<AccessPoint> routers = new ArrayList<>();

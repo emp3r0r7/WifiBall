@@ -8,8 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class FrontEndData {
 
-    private GyroData gyroData = new GyroData();
+    private GyroData gyroData = new GyroData(); //instantaneous gyro data when sent to front-end
 
-    private Map<String, DataReading> wifiDataMap = new ConcurrentHashMap<>();
+    private Map<String, ApData> wifiDataMap = new ConcurrentHashMap<>();
+
+    private Map<String, StationData> notAssociatedStationDataMap = new ConcurrentHashMap<>();
 
 }
