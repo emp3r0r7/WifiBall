@@ -21,7 +21,7 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
 
 - **Hardware:**
   - A directional WiFi antenna for accurate signal detection.
-  - A WiFi card capable of monitor mode es. [Alfa AWUS036NHA](https://www.alfa.com.tw/products/awus036nha?variant=36473966166088)
+  - A WiFi card capable of monitor mode eg. [Alfa AWUS036NHA](https://www.alfa.com.tw/products/awus036nha?variant=36473966166088)
   - An Android device with a gyroscope sensor, mounted on the antenna to track its orientation.
   - A tripod to stabilize both the antenna and the Android device during the scan.
 
@@ -51,12 +51,12 @@ To better understand the physical setup required for this project, refer to the 
 2. **Install Dependencies:**
 
     ```bash
-    sudo apt-get install aircrack-ng
+    sudo apt install aircrack-ng
     ```
 
 3. **Run the Application:**
 
-    Build and run the backend application to handle WebSocket connections and manage WiFi data:
+    Build and run the application to handle WebSocket connections and manage WiFi data:
 
     ```bash
     cd wifiball 
@@ -78,8 +78,9 @@ To better understand the physical setup required for this project, refer to the 
      ```bash
     cd ~
     nano .wifiball/config.properties
-    set your network card accordingly
+    
     ```
+    Set your network card accordingly at network.card, always put the card managed state eg. wlan0 instead of wlan0mon
 
 6. **Access the Application:**
 
@@ -87,12 +88,14 @@ To better understand the physical setup required for this project, refer to the 
 
 ## Usage
 
+- **Be smooth!:**
+  - While turning your antenna and gyroscope around , be gentle , steady and slow , the application currently has a polling rate of 1 second, its useless to turn the antenna rapidly.
+  - In order to have precise and accurate readings , you must scan the environment a lot, because higher signals will be shown by replacing weaker ones. You got the idea.
 - **Control the Camera:**
   - Use your mouse to rotate, zoom, and pan around the scene.
 - **View Access Point Details:**
   - Hover over an access point to see detailed information about it in a tooltip.
 - **Toggle Sidebar:**
-  - Click the "Show AP List" button to toggle the visibility of the sidebar listing all detected access points.
-
+  - Click the "Show AP List" button to toggle the visibility of the sidebar listing all detected access points and their associated stations.
 
 ---
