@@ -29,18 +29,20 @@ public class StringUtil {
         String[] split = gyroState.split("\\|");
 
         try {
-            if(split.length == 3){
+            if(split.length == 4){
 
                 GyroData gyroData = new GyroData();
                 String y = split[0];
                 String x = split[1];
                 String z = split[2];
 
+                Long epochReading = Long.valueOf(split[3]);
+
                 gyroData.setAxisY(Double.valueOf(cleanGyroData(y)));
                 gyroData.setAxisX(Double.valueOf(cleanGyroData(x)));
                 gyroData.setAxisZ(Double.valueOf(cleanGyroData(z)));
 
-                gyroData.setReadEpoch(System.currentTimeMillis());
+                gyroData.setReadEpoch(epochReading);
                 return gyroData;
             }
         } catch (NumberFormatException e) {

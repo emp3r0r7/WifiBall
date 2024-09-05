@@ -92,6 +92,8 @@ public class AirodumpProcess implements IProcess {
                 LOGGER.info("Created temp dir {}", TEMP_PATH);
 
             this.process = processBuilder.start();
+            LOGGER.info("{} Process started with pid {}", this.getClass().getSimpleName(), process.pid());
+
             ThreadUtils.addShutdownHook(process, LOGGER);
             this.process.onExit().join();
 
@@ -101,7 +103,6 @@ public class AirodumpProcess implements IProcess {
             if(this.processExitCallback != null)
                 processExitCallback.onProcessComplete(process);
 
-            LOGGER.info("Process started with pid {}", pid);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
