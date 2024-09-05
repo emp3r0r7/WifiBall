@@ -21,7 +21,7 @@ public class GyroWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(@Nonnull WebSocketSession session, TextMessage message) {
 
-        String payload = message.getPayload();
+        String payload = message.getPayload() + "|" + System.currentTimeMillis();
 
         //LOGGER.info("Received: {}", payload);
 

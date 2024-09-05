@@ -12,6 +12,7 @@ import org.emp3r0r7.utils.StringUtil;
 import org.emp3r0r7.websocket.FrontendWebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ import java.util.List;
 import static org.emp3r0r7.filesystem.CsvParser.NOT_ASSOCIATED;
 import static org.emp3r0r7.filesystem.FileSystemEngine.TEMP_PATH;
 import static org.emp3r0r7.process.RequiredProcess.AIRODUMP;
+import static org.emp3r0r7.utils.DateUtils.isTimeExceeded;
 
 @Component
 public class DumpScheduler {
@@ -36,6 +38,10 @@ public class DumpScheduler {
     private Long previousEpoch = null;
 
     private File file = null;
+
+    //log threshold
+    long lastLogTime = 0;
+    long logInterval = 5000; // 5 seconds
 
     public DumpScheduler(SharedState sharedState,
                          ExecutorOrchestrator orchestrator,
@@ -62,11 +68,17 @@ public class DumpScheduler {
         if(gyroState != null){
             //LOGGER.info("Last Gyro Reading : {}", gyroState);
             gyroData = StringUtil.extractGyroData(gyroState);
+
+            if(gyroData != null && isTimeExceeded(gyroData.getReadEpoch(), 2)){
+                this.thresholdLogging("Gyro Reading is expired!, check Android application!", Level.WARN);
+                return;
+            }
+
             this.sharedState.getFrontEndData().setGyroData(gyroData);
         }
 
         else {
-            LOGGER.warn("Gyro Reading is null, check Android application!");
+            this.thresholdLogging("Gyro Reading is null, check Android application!", Level.WARN);
             return; //gyro not present, skipping cycle
         }
 
@@ -86,7 +98,7 @@ public class DumpScheduler {
         this.cycleNotAssociatedStations(notAssociatedStations);
 
         webSocketHandler.sendDataToClient();
-        LOGGER.info(String.valueOf(this.sharedState.getFrontEndData().getGyroData()));
+        this.thresholdLogging(String.valueOf(this.sharedState.getFrontEndData().getGyroData()), Level.INFO);
 
     }
 
@@ -175,6 +187,26 @@ public class DumpScheduler {
 
         return file;
 
+    }
+
+    private void thresholdLogging(String logMessage, Level level){
+        long currentTime = System.currentTimeMillis();
+
+        if(currentTime - lastLogTime >= logInterval){
+
+            switch (level){
+
+                case WARN -> LOGGER.warn(logMessage);
+
+                case INFO -> LOGGER.info(logMessage);
+
+                case DEBUG -> LOGGER.debug(logMessage);
+
+                case ERROR -> LOGGER.error(logMessage);
+            }
+
+            lastLogTime = currentTime;
+        }
     }
 
 }
