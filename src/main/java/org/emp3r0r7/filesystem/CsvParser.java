@@ -120,9 +120,17 @@ public class CsvParser {
                     station.setPackets(safeParseInt(line[4].trim(), 0)); // 0 come valore predefinito
 
                     station.setBssid(safeTrim(line[5]));
-                    station.setProbedEssids(safeTrim(line[6]));
 
+                    StringBuilder sb = new StringBuilder(safeTrim(line[6]));
+
+                    if(!sb.toString().isBlank()){
+                        for(int i = 7 ; i < line.length ; i++)
+                            sb.append(" ").append(safeTrim(line[i]));
+                    }
+
+                    station.setProbedEssids(sb.toString());
                     stations.add(station);
+
                 } else {
                     System.out.println("Riga non valida (lunghezza " + line.length + "): " + Arrays.toString(line));
                 }
