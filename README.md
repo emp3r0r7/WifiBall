@@ -3,7 +3,7 @@
 
 This project visualizes real-time WiFi data in a 3D environment using [Babylon.js](https://www.babylonjs.com/) and a WebSocket connection to stream data from an Android device gyroscope information. The data includes access points detected by `airodump-ng`, their signal strength, and the current orientation of the Android device, which is used to position the access points in a 3D space.
 
-![Project Overview](https://emp3r0r7.neocities.org/images/wifiball/wifimap_4.jpg)
+![Project Overview](https://emp3r0r7.neocities.org/images/wifiball/wifimap_6.jpg)
 
 ## Features
 
