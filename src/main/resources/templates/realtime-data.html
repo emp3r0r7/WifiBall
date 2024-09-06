@@ -625,7 +625,13 @@
             listItem.style.padding = '10px';
             listItem.style.cursor = 'pointer';
 
-            listItem.textContent = `${stationData.station.stationMac} (${stationData.highestPower} dBm)`;
+            // Controlla se ci sono Probed ESSIDs e aggiungi un asterisco se non è N/A
+            let itemName = `${stationData.station.stationMac} (${stationData.highestPower} dBm)`;
+            if (stationData.station.probedEssids && stationData.station.probedEssids !== 'N/A') {
+                itemName += ' *';
+            }
+
+            listItem.textContent = itemName;
 
             // Imposta il colore di sfondo della riga in base alla potenza del segnale
             if (stationData.highestPower >= highPow) {
