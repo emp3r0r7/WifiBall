@@ -1,9 +1,9 @@
-![Project Logo](https://emp3r0r7.neocities.org/images/wifiball/wifiball_logo1.jpg)
+![Project Logo](https://iu0thf.neocities.org/images/wifiball/wifiball_logo1.jpg)
 # WifiBall : Real-Time 3D WiFi Data Visualization
 
 This project visualizes real-time WiFi data in a 3D environment using [Babylon.js](https://www.babylonjs.com/) and a WebSocket connection to stream data from an Android device gyroscope information. The data includes access points detected by `airodump-ng`, their signal strength, and the current orientation of the Android device, which is used to position the access points in a 3D space.
 
-![Project Overview](https://emp3r0r7.neocities.org/images/wifiball/wifimap_6.jpg)
+![Project Overview](https://iu0thf.neocities.org/images/wifiball/wifimap_6.jpg)
 
 ## Features
 
@@ -35,10 +35,10 @@ This project visualizes real-time WiFi data in a 3D environment using [Babylon.j
 
 To better understand the physical setup required for this project, refer to the following images:
 
-![WiFiBall Setup 1](https://emp3r0r7.neocities.org/images/wifiball/wifimap_1.jpg)
+![WiFiBall Setup 1](https://iu0thf.neocities.org/images/wifiball/wifimap_1.jpg)
 *WiFiBall Setup with directional antenna and Android device mounted on a tripod.*
 
-![WiFiBall Setup 2](https://emp3r0r7.neocities.org/images/wifiball/wifimap_2.jpg)
+![WiFiBall Setup 2](https://iu0thf.neocities.org/images/wifiball/wifimap_2.jpg)
 *Close-up of the Android device mounted on the antenna.*
 
 ## Installation
